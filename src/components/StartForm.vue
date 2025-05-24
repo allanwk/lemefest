@@ -41,7 +41,7 @@ export default {
             if (this.uuid) {
                 let response;
                 try {
-                    response = await this.$axios.get('/user?uuid_usuario=' + this.uuid);
+                    response = await this.$axios.post('/user/get', { uuid_usuario: this.uuid });
                 } catch (e) {
                     console.error(e);
                     this.$toasted.error("Não foi possível consultar o servidor");
@@ -64,7 +64,7 @@ export default {
 
             this.loaded = false;
             try {
-                await this.$axios.post('/user', {
+                await this.$axios.post('/user/create', {
                     uuid_usuario: this.uuid,
                     numero_identificacao: this.identification,
                     tipo_identificacao: 'CPF',

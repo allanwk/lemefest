@@ -96,7 +96,7 @@
             getState: async function () {
                 let response;
                 try {
-                    response = await this.$axios.get('/state');
+                    response = await this.$axios.post('/state');
                 } catch (e) {
                     console.error(e);
                     this.$toasted.error("Não foi possível consultar a fila");
@@ -112,7 +112,7 @@
             getResources: async function () {
                 let response;
                 try {
-                    response = await this.$axios.get('/resource');
+                    response = await this.$axios.post('/resource');
                 } catch (e) {
                     console.error(e);
                     this.$toasted.error("Não foi possível consultar os recursos");
