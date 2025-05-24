@@ -39,7 +39,14 @@ export default {
         load: async function () {
             this.uuid = localStorage.getItem("uuid_usuario");
             if (this.uuid) {
-                const response = await this.$axios.get('/user?uuid_usuario=' + this.uuid);
+                let response;
+                try {
+                    response = await this.$axios.get('/user?uuid_usuario=' + this.uuid);
+                } catch (e) {
+                    console.error(e);
+                    this.$toasted.error("Não foi possível consultar o servidor");
+                    return;
+                }
                 if (response.data?.user) {
                     this.$emit('next');
                     return;
@@ -55,6 +62,7 @@ export default {
                 return;
             }
 
+            this.loaded = false;
             try {
                 await this.$axios.post('/user', {
                     uuid_usuario: this.uuid,
@@ -67,6 +75,8 @@ export default {
                 this.$toasted.success('Dados salvos com sucesso!');
             } catch (e) {
                 this.$toasted.error('Ocorreu um erro inesperado!');
+            } finally {
+                this.loaded = true;
             }
 
             this.$emit('next');

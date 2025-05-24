@@ -94,7 +94,14 @@
                 }
             },
             getState: async function () {
-                const response = await this.$axios.get('/state');
+                let response;
+                try {
+                    response = await this.$axios.get('/state');
+                } catch (e) {
+                    console.error(e);
+                    this.$toasted.error("Não foi possível consultar a fila");
+                    return;
+                }
                 const user = response.data.usuario;
                 if (user.minha_vez === 1 && this.phase === this.phases.waiting) {
                     this.startPickingPhase();
@@ -103,7 +110,14 @@
                 }
             },
             getResources: async function () {
-                const response = await this.$axios.get('/resource');
+                let response;
+                try {
+                    response = await this.$axios.get('/resource');
+                } catch (e) {
+                    console.error(e);
+                    this.$toasted.error("Não foi possível consultar os recursos");
+                    return;
+                }
                 this.resources = response.data.recursos;
                 this.selected = this.resources.filter(resource => resource.id_status_recurso !== 1).map(resource => resource.id_recurso);
             },
@@ -116,9 +130,15 @@
                     this.$toasted.error("É necessário escolher ao menos uma mesa");
                     return;
                 }
-                await this.$axios.post('/resource/request', {
-                    resource_ids: this.getMySelectedResourceIds
-                });
+                try {
+                    await this.$axios.post('/resource/request', {
+                        resource_ids: this.getMySelectedResourceIds
+                    });
+                } catch (e) {
+                    console.error(e);
+                    this.$toasted.error("Não foi possível solicitar os recursos");
+                    return;
+                }
                 this.startPaymentPhase();
             },
             startPaymentPhase: function () {
