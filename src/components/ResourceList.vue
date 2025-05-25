@@ -18,14 +18,13 @@
                         :key="item.id_recurso"
                         style="border-bottom: none"
                     >
-                    <v-checkbox
-                        v-model="selected"
-                        :label="item.label"
-                        :value="item.id_recurso"
-                        :disabled="item.id_status_recurso !== 1 && !item.solicitado_por_mim"
-                        :readonly="step === steps.QUEUE"
-                        hide-details
-                    />
+                        <NumberToggle
+                            v-model="selected"
+                            :value="item.id_recurso"
+                            :number="item.nome_recurso_short"
+                            :disabled="item.id_status_recurso !== 1 && !item.solicitado_por_mim"
+                            :readonly="step === steps.QUEUE"
+                        />                        
                     </td>
                 </tr>
                 </tbody>
@@ -48,8 +47,13 @@
 </template>
 
 <script>
+    import NumberToggle from './NumberToggle';
+
     export default {
         name: 'ResourceList',
+        components: {
+            NumberToggle,
+        },
         data: function () {
             return {
                 interval: null,
