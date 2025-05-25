@@ -3,6 +3,7 @@ import App from './App.vue'
 import vuetify from './plugins/vuetify'
 import Toasted from 'vue-toasted';
 import api from './api/axios';
+import VueTheMask from 'vue-the-mask';
 
 
 Vue.config.productionTip = false
@@ -13,6 +14,8 @@ Vue.use(Toasted, {
   duration: 3000,
   theme: 'toasted-primary'
 });
+
+Vue.use(VueTheMask);
 
 new Vue({
   vuetify,

@@ -5,9 +5,10 @@
       color="primary"
       dark
     >
+      <v-toolbar-title>Festa Junina Leme 2025</v-toolbar-title>
     </v-app-bar>
 
-    <v-main>
+    <v-main class="background">
       <StartForm v-if='step === steps.REGISTER' @gotoStep='handleGotoStep' @next="step = steps.QUEUE"/>
       <ResourceList v-if='[steps.QUEUE, steps.SELECTION].includes(step)' @next="step = steps.PAYMENT"/>
       <PaymentStep v-if='step === steps.PAYMENT' @next="step = steps.FINISHED"/>

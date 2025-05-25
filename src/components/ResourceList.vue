@@ -1,9 +1,12 @@
 <template>
-    <div>
-        <h1>{{getTitle}}</h1>
-        <v-progress-linear v-if='step === steps.QUEUE' indeterminate rounded/>
-        <template>
-            <v-simple-table>
+    <v-container fluid fill-height>
+        <v-card style="width:100%">
+            <v-card-title>
+                {{getTitle}}
+            </v-card-title>
+            <v-card-text>
+                <v-progress-linear v-if='step === steps.QUEUE' indeterminate rounded/>
+                <v-simple-table>
                 <tbody>
                 <tr
                     v-for="(row, rowIndex) in chunkedResources"
@@ -11,9 +14,9 @@
                     style="border-bottom: none"
                 >
                     <td
-                    v-for="item in row"
-                    :key="item.id_recurso"
-                    style="border-bottom: none"
+                        v-for="item in row"
+                        :key="item.id_recurso"
+                        style="border-bottom: none"
                     >
                     <v-checkbox
                         v-model="selected"
@@ -27,9 +30,21 @@
                 </tr>
                 </tbody>
             </v-simple-table>
-            <v-btn @click="requestPickedResources" :disabled="!getMySelectedResourceIds.length" :loading="buttonLoading">Solicitar mesas</v-btn>
-        </template>
-    </div>
+            </v-card-text>
+            <v-card-actions>
+                
+            </v-card-actions>
+        </v-card>
+        <v-footer
+            color="primary"
+            app
+            v-if="step === steps.SELECTION"
+            >
+            <span style="color:background">{{ totalPriceLabel }}</span>
+            <v-spacer/>
+            <v-btn color='background' @click="requestPickedResources" :loading="buttonLoading">{{ buyButtonLabel }}</v-btn>
+        </v-footer>
+    </v-container>
 </template>
 
 <script>
@@ -81,6 +96,18 @@
                     const resource = this.resources.find(resource => resource.id_recurso === id);
                     return resource.id_status_recurso === 1 || resource.solicitado_por_mim === 1
                 })
+            },
+            buyButtonLabel: function () {
+                if (this.getMySelectedResourceIds.length === 1) {
+                    return "Comprar mesa";
+                } else if (this.getMySelectedResourceIds.length > 1) {
+                    return `Comprar ${this.getMySelectedResourceIds.length} mesas`;
+                }
+                return "Comprar mesas";
+            },
+            totalPriceLabel: function () {
+                const total = this.getMySelectedResourceIds.reduce((acc, resourceId) => {return acc + Number(this.resources.find(res => res.id_recurso === resourceId).valor)}, 0);
+                return "Total: R$ " + total.toFixed(2);
             }
         },
         methods: {
