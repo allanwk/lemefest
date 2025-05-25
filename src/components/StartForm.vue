@@ -47,8 +47,8 @@ export default {
                     this.$toasted.error("Não foi possível consultar o servidor");
                     return;
                 }
-                if (response.data?.user) {
-                    this.$emit('next');
+                if (response.data?.user?.id_etapa) {
+                    this.$emit('gotoStep', response.data?.user?.id_etapa);
                     return;
                 }
             } 

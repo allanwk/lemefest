@@ -1,8 +1,8 @@
 <template>
     <div>
         <h1>{{getTitle}}</h1>
-        <v-progress-linear v-if='phase === phases.waiting' indeterminate rounded/>
-        <template v-if='phase === phases.picking'>
+        <v-progress-linear v-if='step === steps.QUEUE' indeterminate rounded/>
+        <template>
             <v-simple-table>
                 <tbody>
                 <tr
@@ -20,13 +20,14 @@
                         :label="item.label"
                         :value="item.id_recurso"
                         :disabled="item.id_status_recurso !== 1 && !item.solicitado_por_mim"
+                        :readonly="step === steps.QUEUE"
                         hide-details
                     />
                     </td>
                 </tr>
                 </tbody>
             </v-simple-table>
-            <v-btn @click="requestResources" :disabled="!getMySelectedResourceIds.length">Solicitar mesas</v-btn>
+            <v-btn @click="requestPickedResources" :disabled="!getMySelectedResourceIds.length" :loading="buttonLoading">Solicitar mesas</v-btn>
         </template>
     </div>
 </template>
@@ -37,37 +38,33 @@
         data: function () {
             return {
                 interval: null,
-                phase: null,
-                phases: {
-                    waiting: "waiting",
-                    picking: "picking",
-                    payment: "payment",
-                    finalized: "finalized"
+                resourceInterval: null,
+                step: 1,
+                steps: {
+                    REGISTER: 0,
+                    QUEUE: 1,
+                    SELECTION: 2,
+                    PAYMENT: 3,
+                    FINISHED: 4,
                 },
-                uuid: null,
                 resources: [],
                 unavailableResources: [],
                 selected: [],
+                qr_code: null,
+                qr_code_base64: null,
+                buttonLoading: false,
             };
         },
         mounted: function () {
-            this.phase = this.phases.waiting;
-            this.uuid = localStorage.getItem("uuid_usuario");
             this.startPolling();
         },
         computed: {
             getTitle: function () {
-                if (this.phase === this.phases.waiting) {
+                if (this.step === this.steps.QUEUE) {
                     return "Aguarde, você está na fila";
                 }
-                if (this.phase === this.phases.picking) {
+                if (this.step === this.steps.SELECTION) {
                     return "Hora de escolher suas mesas";
-                }
-                if (this.phase === this.phases.payment) {
-                    return "Pagamento";
-                }
-                if (this.phase === this.phases.finalized) {
-                    return "Resumo da reserva";
                 }
                 return null;
             },
@@ -92,6 +89,20 @@
                     this.getState();
                     this.interval = window.setInterval(this.getState, 5000);
                 }
+                if (!this.resourceInterval) {
+                    this.getResources();
+                    this.resourceInterval = window.setInterval(this.getResources, 10000);
+                }
+            },
+            stopPolling: function () {
+                if (this.interval) {
+                    window.clearInterval(this.interval);
+                    this.interval = null;
+                }
+                if (this.resourceInterval) {
+                    window.clearInterval(this.resourceInterval);
+                    this.resourceInterval = null;
+                }
             },
             getState: async function () {
                 let response;
@@ -103,10 +114,10 @@
                     return;
                 }
                 const user = response.data.usuario;
-                if (user.minha_vez === 1 && this.phase === this.phases.waiting) {
-                    this.startPickingPhase();
-                } else if (user.data_hora_fim_selecao && this.phase !== this.phases.finalized) {
-                    this.gotoFinalized();
+                if (user.minha_vez === 1 && this.step === this.steps.QUEUE) {
+                    this.stopPolling();
+                    this.startSelectionStep();
+                    return;
                 }
             },
             getResources: async function () {
@@ -121,35 +132,30 @@
                 this.resources = response.data.recursos;
                 this.selected = this.resources.filter(resource => resource.id_status_recurso !== 1).map(resource => resource.id_recurso);
             },
-            startPickingPhase: function () {
-                this.phase = this.phases.picking;
+            startSelectionStep: function () {
+                this.step = this.steps.SELECTION;
                 this.getResources();
             },
-            requestResources: async function () {
+            requestPickedResources: async function () {
                 if (!this.getMySelectedResourceIds) {
                     this.$toasted.error("É necessário escolher ao menos uma mesa");
                     return;
                 }
+                this.buttonLoading = true;
+                let paymentResponse;
                 try {
-                    await this.$axios.post('/resource/request', {
+                    paymentResponse = await this.$axios.post('/resource/request', {
                         resource_ids: this.getMySelectedResourceIds
                     });
                 } catch (e) {
                     console.error(e);
                     this.$toasted.error("Não foi possível solicitar os recursos");
                     return;
+                } finally {
+                    this.buttonLoading = false;
                 }
-                this.startPaymentPhase();
+                this.$emit('next', paymentResponse);
             },
-            startPaymentPhase: function () {
-                if (this.phase === this.phases.payment) {
-                    return;
-                }
-                this.phase = this.phases.payment;
-            },
-            gotoFinalized: function () {
-                this.phase = this.phases.finalized;
-            }
         }
     }
 </script>
