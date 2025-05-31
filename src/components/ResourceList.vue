@@ -1,8 +1,16 @@
 <template>
     <v-container fluid fill-height>
+        
         <v-card style="width:100%">
             <v-card-title>
-                {{getTitle}}
+                <v-row justify="center" align="center">
+                    <v-col>
+                        {{getTitle}}
+                    </v-col>
+                    <v-col v-if="step === steps.SELECTION && remainingSeconds != null">
+                        <countdown-timer :initial-time="remainingSeconds" ref="timer" />
+                    </v-col>
+                </v-row>
             </v-card-title>
             <v-card-text>
                 <v-progress-linear v-if='step === steps.QUEUE' indeterminate rounded/>
@@ -21,8 +29,8 @@
                         <NumberToggle
                             v-model="selected"
                             :value="item.id_recurso"
-                            :number="item.nome_recurso_short"
-                            :disabled="item.id_status_recurso !== 1 && !item.solicitado_por_mim"
+                            :number="parseInt(item.nome_recurso_short, 10)"
+                            :state="getResourceState(item)"
                             :readonly="step === steps.QUEUE"
                         />                        
                     </td>
@@ -48,11 +56,13 @@
 
 <script>
     import NumberToggle from './NumberToggle';
+    import CountdownTimer from './CountdownTimer';
 
     export default {
         name: 'ResourceList',
         components: {
             NumberToggle,
+            CountdownTimer,
         },
         data: function () {
             return {
@@ -72,6 +82,8 @@
                 qr_code: null,
                 qr_code_base64: null,
                 buttonLoading: false,
+                tableLimit: 0,
+                remainingSeconds: null,
             };
         },
         mounted: function () {
@@ -112,6 +124,9 @@
             totalPriceLabel: function () {
                 const total = this.getMySelectedResourceIds.reduce((acc, resourceId) => {return acc + Number(this.resources.find(res => res.id_recurso === resourceId).valor)}, 0);
                 return "Total: R$ " + total.toFixed(2);
+            },
+            resourceLimitReached: function () {
+                return this.getMySelectedResourceIds.length >= this.tableLimit;
             }
         },
         methods: {
@@ -146,9 +161,19 @@
                 }
                 const user = response.data.usuario;
                 if (user.minha_vez === 1 && this.step === this.steps.QUEUE) {
-                    this.stopPolling();
                     this.startSelectionStep();
+                    this.tableLimit = parseInt(user.limite_mesas, 10);
+                    this.remainingSeconds = user.segundos_restantes_selecao;
+                    this.$nextTick(() => {
+                        this.$refs.timer.startTimer();
+                    })
                     return;
+                }
+                if (user.minha_vez === 1 && this.step === this.steps.SELECTION) {
+                    this.remainingSeconds = user.segundos_restantes_selecao;
+                    this.$nextTick(() => {
+                        this.$refs.timer.startTimer();
+                    })
                 }
             },
             getResources: async function () {
@@ -187,6 +212,21 @@
                 }
                 this.$emit('next', paymentResponse);
             },
+            getResourceState: function (item) {
+                if (item.id_status_recurso !== 1 && !item.solicitado_por_mim) {
+                    return 3; //disabled dark
+                }
+                
+                if (this.step === this.steps.QUEUE) {
+                    return 1; //disabled, but no appearance change
+                }
+
+                if (this.resourceLimitReached && this.selected.findIndex(it => it === item.id_recurso) === -1) {
+                    return 2; //disabled light
+                }
+
+                return 0;
+            }
         }
     }
 </script>

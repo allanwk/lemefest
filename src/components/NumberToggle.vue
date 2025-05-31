@@ -1,7 +1,7 @@
 <template>
     <div 
       class="numbered-checkbox"
-      :class="{ 'checked': isChecked, 'disabled': disabled }"
+      :class="{ 'checked': isChecked, 'disabled-cursor': state === 1, 'disabled-light': state === 2, 'disabled-dark': state === 3 }"
       @click="toggle"
     >
       <input
@@ -37,9 +37,9 @@
         type: Number,
         required: true
       },
-      disabled: {
-        type: Boolean,
-        default: false
+      state: {
+        type: Number,
+        required: true,
       },
       readonly: {
         type: Boolean,
@@ -60,7 +60,10 @@
           return this.modelValue.includes(this.value)
         }
         return this.modelValue
-      }
+      },
+      disabled() {
+        return this.state > 0;
+      },
     },
     methods: {
       toggle() {
@@ -107,8 +110,18 @@
     border-color: #000084;
     background-color: #000084;
   }
+
+  .numbered-checkbox.disabled-cursor {
+    cursor: not-allowed;
+  }
   
-  .numbered-checkbox.disabled {
+  .numbered-checkbox.disabled-light {
+    border-color: rgb(204, 200, 200);
+    background-color: rgb(204, 200, 200);
+    cursor: not-allowed;
+  }
+
+  .numbered-checkbox.disabled-dark {
     border-color: grey;
     background-color: grey;
     cursor: not-allowed;

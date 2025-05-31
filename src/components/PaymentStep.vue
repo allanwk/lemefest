@@ -2,7 +2,14 @@
     <v-container fluid fill-height>
         <v-card>
             <v-card-title>
-                Pague R${{ payment_value.toFixed(2) }} via PIX
+                <v-row justify="center" align="center">
+                    <v-col>
+                        Pague R${{ payment_value.toFixed(2) }} via PIX
+                    </v-col>
+                    <v-col v-if="remainingSeconds != null">
+                        <countdown-timer :initial-time="remainingSeconds" ref="timer" />
+                    </v-col>
+                </v-row>
             </v-card-title>
             <v-card-text>
                 <div class="mb-2">Escaneie o código QR:</div>
@@ -18,14 +25,20 @@
 </template>
 
 <script>
+    import CountdownTimer from './CountdownTimer';
+
     export default {
         name: 'PaymentStep',
+        components: {
+            CountdownTimer,
+        },
         data: function () {
             return {
                 qr_code: null,
                 qr_code_base64: null,
                 payment_value: null,
                 interval: null,
+                remainingSeconds: null,
             }
         },
         mounted: function () {
@@ -67,7 +80,13 @@
                 if (user.id_etapa === 4) {
                     this.stopPolling();
                     this.$emit('next');
+                    return;
                 }
+
+                this.remainingSeconds = user.segundos_restantes_pagamento;
+                this.$nextTick(() => {
+                    this.$refs.timer.startTimer();
+                })
             },
             copyCode: async function () {
                 try {
