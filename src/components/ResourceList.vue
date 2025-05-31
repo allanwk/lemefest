@@ -140,11 +140,13 @@
                     this.resourceInterval = window.setInterval(this.getResources, 10000);
                 }
             },
-            stopPolling: function () {
+            stopPollingState: function () {
                 if (this.interval) {
                     window.clearInterval(this.interval);
                     this.interval = null;
                 }
+            },
+            stopPollingResources: function () {
                 if (this.resourceInterval) {
                     window.clearInterval(this.resourceInterval);
                     this.resourceInterval = null;
@@ -189,6 +191,7 @@
                 this.selected = this.resources.filter(resource => resource.id_status_recurso !== 1).map(resource => resource.id_recurso);
             },
             startSelectionStep: function () {
+                this.stopPollingResources();
                 this.step = this.steps.SELECTION;
                 this.getResources();
             },
@@ -210,6 +213,8 @@
                 } finally {
                     this.buttonLoading = false;
                 }
+                this.stopPollingResources();
+                this.stopPollingState();
                 this.$emit('next', paymentResponse);
             },
             getResourceState: function (item) {
