@@ -10,9 +10,10 @@
 
     <v-main class="background">
       <StartForm v-if='step === steps.REGISTER' @gotoStep='handleGotoStep' @next="step = steps.QUEUE"/>
-      <ResourceList v-if='[steps.QUEUE, steps.SELECTION].includes(step)' @next="step = steps.PAYMENT"/>
-      <PaymentStep v-if='step === steps.PAYMENT' @next="step = steps.FINISHED"/>
+      <ResourceList v-if='[steps.QUEUE, steps.SELECTION].includes(step)' @next="step = steps.PAYMENT" @timeExpired="step = steps.SELECTION_EXPIRED"/>
+      <PaymentStep v-if='step === steps.PAYMENT' @next="step = steps.PAID" @timeExpired="step = steps.PAYMENT_EXPIRED"/>
       <PurchaseFinished v-if='step === steps.FINISHED' />
+      <TimeExpired v-if='[steps.PAYMENT_EXPIRED, steps.SELECTION_EXPIRED].includes(step)' :step="step"/>
     </v-main>
   </v-app>
 </template>
@@ -22,6 +23,7 @@ import StartForm from './components/StartForm';
 import ResourceList from './components/ResourceList';
 import PaymentStep from './components/PaymentStep';
 import PurchaseFinished from './components/PurchaseFinished';
+import TimeExpired from './components/TimeExpired';
 
 export default {
   name: 'App',
@@ -30,7 +32,8 @@ export default {
     StartForm,
     ResourceList,
     PaymentStep,
-    PurchaseFinished
+    PurchaseFinished,
+    TimeExpired
   },
 
   data: () => ({
@@ -39,7 +42,9 @@ export default {
       QUEUE: 1,
       SELECTION: 2,
       PAYMENT: 3,
-      FINISHED: 4,
+      PAID: 4,
+      SELECTION_EXPIRED: 5,
+      PAYMENT_EXPIRED: 6,
     },
     step: 0,
   }),

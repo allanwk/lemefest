@@ -82,6 +82,11 @@
                     this.$emit('next');
                     return;
                 }
+                if (parseInt(user.segundos_restantes_pagamento, 10) < 0) {
+                    this.stopPolling();
+                    this.$emit('timeExpired');
+                    return;
+                }
 
                 this.remainingSeconds = user.segundos_restantes_pagamento;
                 this.$nextTick(() => {

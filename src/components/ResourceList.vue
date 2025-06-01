@@ -74,7 +74,8 @@
                     QUEUE: 1,
                     SELECTION: 2,
                     PAYMENT: 3,
-                    FINISHED: 4,
+                    PAID: 4,
+                    SELECTION_EXPIRED: 5,
                 },
                 resources: [],
                 unavailableResources: [],
@@ -162,6 +163,12 @@
                     return;
                 }
                 const user = response.data.usuario;
+                if (parseInt(user.segundos_restantes_selecao) < 0) {
+                    this.stopPollingResources();
+                    this.stopPollingState();
+                    this.$emit('timeExpired');
+                    return;
+                }
                 if (user.minha_vez === 1 && this.step === this.steps.QUEUE) {
                     this.startSelectionStep();
                     this.tableLimit = parseInt(user.limite_mesas, 10);
