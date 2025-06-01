@@ -8,7 +8,7 @@
                         {{getTitle}}
                     </v-col>
                     <v-col v-if="step === steps.SELECTION && remainingSeconds != null">
-                        <countdown-timer :initial-time="remainingSeconds" ref="timer" />
+                        <countdown-timer :initial-time="remainingSeconds" ref="timer" message="Tempo restante"/>
                     </v-col>
                 </v-row>
             </v-card-title>

@@ -7,7 +7,7 @@
                         Pague R${{ payment_value.toFixed(2) }} via PIX
                     </v-col>
                     <v-col v-if="remainingSeconds != null">
-                        <countdown-timer :initial-time="remainingSeconds" ref="timer" />
+                        <countdown-timer :initial-time="remainingSeconds" ref="timer" message="Tempo restante"/>
                     </v-col>
                 </v-row>
             </v-card-title>
