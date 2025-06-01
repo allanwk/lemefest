@@ -184,7 +184,7 @@ export default {
         save: async function () {
             this.loaded = false;
             try {
-                    await this.$axios.post('/user/create', {
+                    const response = await this.$axios.post('/user/create', {
                         uuid_usuario: this.uuid,
                         numero_identificacao: this.identification,
                         tipo_identificacao: 'CPF',
@@ -192,6 +192,8 @@ export default {
                         nome: this.name,
                         codigos_alunos: this.students.map(student => student.studentCode),
                     });
+                    const token = response.data.token;
+                    localStorage.setItem("token", token);
 
                     this.$toasted.success('Dados salvos com sucesso!');
                 } catch (e) {

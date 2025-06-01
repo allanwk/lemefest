@@ -10,6 +10,7 @@ const api = axios.create({
 
 api.interceptors.request.use(config => {
   config.headers['X-User-Uuid'] = localStorage.getItem('uuid_usuario');
+  config.headers['Authorization'] = localStorage.getItem('token');
   return config;
 });
 

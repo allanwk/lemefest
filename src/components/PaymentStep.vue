@@ -45,6 +45,9 @@
             this.loadPayment();
             this.startPolling();
         },
+        beforeDestroy: function () {
+            this.stopPolling();
+        },
         methods: {
             loadPayment: async function () {
                 const response = await this.$axios.post('/payment');

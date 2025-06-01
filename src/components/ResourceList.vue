@@ -90,6 +90,10 @@
         mounted: function () {
             this.startPolling();
         },
+        beforeDestroy: function () {
+            this.stopPollingState();
+            this.stopPollingResources();
+        },
         computed: {
             getTitle: function () {
                 if (this.step === this.steps.QUEUE) {

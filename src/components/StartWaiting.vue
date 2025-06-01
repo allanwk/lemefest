@@ -35,6 +35,7 @@
                     const response = await this.$axios.post('/state/getStarted');
                     if (response.data.segundos_ate_liberacao != null) {
                         if (parseInt(response.data.segundos_ate_liberacao, 10) <= 0) {
+                            this.stopPolling();
                             this.$emit('next');
                         } else {
                             this.loaded = true;
