@@ -197,7 +197,11 @@ export default {
 
                     this.$toasted.success('Dados salvos com sucesso!');
                 } catch (e) {
-                    this.$toasted.error('Ocorreu um erro inesperado!');
+                    if (e.response?.data?.message != null) {
+                        this.$toasted.error(e.response.data.message);
+                    } else {
+                        this.$toasted.error('Ocorreu um erro inesperado!');
+                    }
                     return;
                 } finally {
                     this.loaded = true;
