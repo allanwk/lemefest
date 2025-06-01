@@ -1,6 +1,6 @@
 <template>
-    <v-card class="countdown-timer" outlined>
-      <v-card-text class="text-center">
+    <v-card class="countdown-timer py-0" outlined>
+      <v-card-text class="text-center py-0">
         {{ message }}
         <div class="time-display text-h5 font-weight-bold">
           {{ formattedMinutes }}:{{ formattedSeconds }}
@@ -146,6 +146,7 @@
   .time-display {
     font-family: monospace;
     color: var(--v-primary-base);
+    white-space: nowrap;
   }
   
   .time-display.warning {

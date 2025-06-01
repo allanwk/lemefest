@@ -3,7 +3,7 @@
         <v-card>
             <v-card-title>
                 <v-row justify="center" align="center">
-                    <v-col>
+                    <v-col class="keep-words">
                         Pague R${{ payment_value.toFixed(2) }} via PIX
                     </v-col>
                     <v-col v-if="remainingSeconds != null">
@@ -16,9 +16,18 @@
                 <v-img v-if='qr_code_base64' :src="`data:image/png;base64,${qr_code_base64}`"></v-img>
 
                 <v-divider class="mb-1"/>
-                <div class="mb-2">Ou <a @click="copyCode"><b>copie</b></a> o código abaixo:</div>
-                <v-text-field readonly :value="qr_code" append-icon="mdi-content-copy" @click:append="copyCode"/>
-                <p>Você será redirecionado automaticamente assim que o pagamento for aprovado.</p>
+                <div class="mb-2">Ou use o código abaixo:</div>
+                <v-text-field id="textToCopy" readonly :value="qr_code" append-icon="mdi-content-copy" @click:append="copyCode"/>
+                <v-row align="center" justify="center">
+                    <v-col cols="12" style="display: grid; place-items: center;">
+                        <v-btn color="primary" @click="copyCode">Copiar código</v-btn>
+                    </v-col>
+                </v-row>
+                <v-row>
+                    <v-col>
+                        <p>Você será redirecionado automaticamente assim que o pagamento for aprovado.</p>
+                    </v-col>
+                </v-row>
             </v-card-text>
         </v-card>
     </v-container>
@@ -39,6 +48,7 @@
                 payment_value: null,
                 interval: null,
                 remainingSeconds: null,
+                shownAlert: false,
             }
         },
         mounted: function () {
@@ -92,19 +102,36 @@
                 }
 
                 this.remainingSeconds = user.segundos_restantes_pagamento;
+
+                if (!this.shownAlert && parseInt(this.remainingSeconds, 10) <= 60) {
+                    this.$toasted.error("Atenção! Você tem menos de um minuto para realizar o pagamento. Realize o pagamento dentro do tempo limite para garantir suas mesas.", {
+                        duration: 8000,
+                    })
+                    this.shownAlert = true;
+                }
+
                 this.$nextTick(() => {
                     this.$refs.timer.startTimer();
                 })
             },
             copyCode: async function () {
                 try {
-                    await navigator.clipboard.writeText(this.textToCopy);
-                    this.$toasted.success("Código copiado!");
+                    let copyText = document.querySelector("#textToCopy");
+                    copyText.select();
+                    document.execCommand("copy");
                 } catch (e) {
                     console.error(e);
                     this.$toasted.error("Não foi possível copiar o código");
                 }
-            }
+            },
         }
     }
 </script>
+
+<style scoped>
+    .keep-words {
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        word-break: keep-all;
+    }
+</style>
