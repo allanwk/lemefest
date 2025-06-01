@@ -1,7 +1,7 @@
 <template>
     <v-card class="countdown-timer" outlined>
       <v-card-text class="text-center">
-        Tempo restante
+        {{ message }}
         <div class="time-display text-h5 font-weight-bold">
           {{ formattedMinutes }}:{{ formattedSeconds }}
         </div>
@@ -45,6 +45,9 @@
       autoStart: {
         type: Boolean,
         default: false
+      },
+      message: {
+        type: String,
       }
     },
     data() {

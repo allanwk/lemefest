@@ -9,6 +9,7 @@
     </v-app-bar>
 
     <v-main class="background">
+      <StartWaiting v-if="step === steps.START_WAITING" @next="step = steps.REGISTER"/>
       <StartForm v-if='step === steps.REGISTER' @gotoStep='handleGotoStep' @next="step = steps.QUEUE"/>
       <ResourceList v-if='[steps.QUEUE, steps.SELECTION].includes(step)' @next="step = steps.PAYMENT" @timeExpired="step = steps.SELECTION_EXPIRED"/>
       <PaymentStep v-if='step === steps.PAYMENT' @next="step = steps.PAID" @timeExpired="step = steps.PAYMENT_EXPIRED"/>
@@ -19,6 +20,7 @@
 </template>
 
 <script>
+import StartWaiting from './components/StartWaiting';
 import StartForm from './components/StartForm';
 import ResourceList from './components/ResourceList';
 import PaymentStep from './components/PaymentStep';
@@ -29,6 +31,7 @@ export default {
   name: 'App',
 
   components: {
+    StartWaiting,
     StartForm,
     ResourceList,
     PaymentStep,
@@ -38,6 +41,7 @@ export default {
 
   data: () => ({
     steps: {
+      START_WAITING: -1,
       REGISTER: 0,
       QUEUE: 1,
       SELECTION: 2,
@@ -46,7 +50,7 @@ export default {
       SELECTION_EXPIRED: 5,
       PAYMENT_EXPIRED: 6,
     },
-    step: 0,
+    step: -1,
   }),
 
   methods: {
