@@ -24,6 +24,7 @@
                         <p class="mt-4">{{ informedStudentsText }}</p>
                     </template>
                     <template v-else>
+                        <p>Por favor preencha corretamente. Precisamos desses dados para gerar a cobrança via PIX.</p>
                         <v-text-field label="Nome" required :rules="validationEnabled ? [rules.required] : []"
                             v-model="name" clearable></v-text-field>
                         <v-text-field label="CPF" required :rules="validationEnabled ? [rules.required, isValidCPF] : []"
@@ -35,10 +36,10 @@
                 </v-form>
             </v-card-text>
             <v-card-actions>
-                <v-btn v-if="isStudentStep" @click="back" color="accent" outlined>Voltar</v-btn>
                 <v-spacer />
                 <v-btn @click="clearConfirmationDialog = true" color="accent">Limpar</v-btn>
-                <v-btn :disabled="isStudentStep && !students.length" @click="handleAction" color="primary">Próximo</v-btn>
+                <v-btn v-if="!isStudentStep" @click="handleAction" color="primary">Salvar</v-btn>
+                <v-btn v-else :disabled="isStudentStep && !students.length" @click="handleAction" color="primary">Próximo</v-btn>
             </v-card-actions>
         </v-card>
         </div>
@@ -67,7 +68,7 @@
                 <v-card-actions>
                     <v-spacer/>
                     <v-btn outline color="accent" @click="confirmationDialog = false">Voltar</v-btn>
-                    <v-btn color="primary" @click="save">Confirmar</v-btn>
+                    <v-btn color="primary" @click="enterQueue">Confirmar</v-btn>
                 </v-card-actions>
             </v-card>
         </v-dialog>
@@ -117,7 +118,7 @@ export default {
             clearConfirmationDialog: false,
             rules: {
                 required: v => !!v && v.trim().length >= 3 || 'Digite ao menos 3 caracteres',
-                validEmail: v => !!v && /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/i.test(v) || 'E-mail inválido'
+                validEmail: v => !!v && /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/i.test(v.trim()) || 'E-mail inválido'
             }
         }
     },
@@ -159,6 +160,10 @@ export default {
                 if (response.data?.user?.id_etapa) {
                     this.$emit('gotoStep', response.data?.user?.id_etapa);
                     return;
+                } else if (response.data?.user) {
+                    this.isStudentStep = true;
+                    this.loaded = true;
+                    return;
                 }
             }
             const uuid = uuidv4();
@@ -173,41 +178,60 @@ export default {
                     if (!this.$refs.form.validate()) {
                         return;
                     }
-                    this.isStudentStep = true;
-                    this.$refs.form.resetValidation();
-                    this.validationEnabled = false;
+                    await this.registerUser();
                 })
             } else {
                 this.confirmationDialog = true;
             }
         },
-        save: async function () {
+        registerUser: async function () {
             this.loaded = false;
             try {
                     const response = await this.$axios.post('/user/create', {
                         uuid_usuario: this.uuid,
-                        numero_identificacao: this.identification,
+                        numero_identificacao: this.identification.trim(),
                         tipo_identificacao: 'CPF',
-                        email: this.email,
-                        nome: this.name,
-                        codigos_alunos: this.students.map(student => student.studentCode),
+                        email: this.email.trim(),
+                        nome: this.name.trim(),
                     });
                     const token = response.data.token;
                     localStorage.setItem("token", token);
 
-                    this.$toasted.success('Dados salvos com sucesso!');
-                } catch (e) {
-                    if (e.response?.data?.message != null) {
-                        this.$toasted.error(e.response.data.message);
-                    } else {
-                        this.$toasted.error('Ocorreu um erro inesperado!');
-                    }
-                    return;
-                } finally {
-                    this.loaded = true;
-                }
+                    this.$toasted.success('Usuário cadastrado');
 
-                this.$emit('next');
+                    this.isStudentStep = true;
+                    if (this.$refs.form) {
+                        this.$refs.form.resetValidation();
+                    }
+                    this.validationEnabled = false;
+            } catch (e) {
+                if (e.response?.data?.message != null) {
+                    this.$toasted.error(e.response.data.message);
+                } else {
+                    this.$toasted.error('Ocorreu um erro inesperado!');
+                }
+                return;
+            } finally {
+                this.loaded = true;
+            }
+        },
+        enterQueue: async function () {
+            this.loaded = false;
+            try {
+                await this.$axios.post('/user/enter-queue', {
+                    codigos_alunos: this.students.map(student => student.studentCode),
+                });
+            } catch (e) {
+                if (e.response?.data?.message != null) {
+                    this.$toasted.error(e.response.data.message);
+                } else {
+                    this.$toasted.error('Ocorreu um erro inesperado!');
+                }
+                return;
+            } finally {
+                this.loaded = true;
+            }
+            this.$emit('next');
         },
         back: function () {
             this.isStudentStep = false;
@@ -294,6 +318,8 @@ export default {
             this.students.push({ name: this.foundStudentName, studentId: this.foundStudentId, studentCode: this.foundStudentCode });
             this.$nextTick(() => {
                 this.foundStudentId = null;
+                this.studentCode = null;
+                this.validationEnabled = false;
                 this.closeStudentDialog();
                 this.$toasted.success("Aluno adicionado!");
             })
