@@ -198,7 +198,7 @@ export default {
                 this.$emit('timeExpired');
                 return;
             }
-            if (user.minha_vez === 1 && this.step === this.steps.QUEUE) {
+            if (user.minha_vez === 1 && this.step === this.steps.QUEUE && user.limite_mesas != null) {
                 this.startSelectionStep();
                 this.tableLimit = parseInt(user.limite_mesas, 10);
                 this.remainingSeconds = user.segundos_restantes_selecao;
