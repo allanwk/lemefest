@@ -99,6 +99,12 @@ export default {
     components: {
         FullscreenLoader
     },
+    props: {
+        fromRestart: {
+            type: Boolean,
+            default: false,
+        }
+    },
     data: function () {
         return {
             name: null,
@@ -147,6 +153,18 @@ export default {
     },
     methods: {
         load: async function () {
+            if (this.fromRestart) {
+                try {
+                    await this.loadLinkedStudents();
+                    this.isStudentStep = true;
+                    this.loaded = true;
+                } catch (e) {
+                    console.error(e);
+                    this.$toasted.error("Erro ao consultar os alunos.");
+                }
+                return;
+            }
+
             this.uuid = localStorage.getItem("uuid_usuario");
             if (this.uuid) {
                 let response;
@@ -323,6 +341,12 @@ export default {
                 this.closeStudentDialog();
                 this.$toasted.success("Aluno adicionado!");
             })
+        },
+        loadLinkedStudents: async function () {
+            const response = await this.$axios.post('/student/linked');
+            if (response.data?.alunos) {
+                this.students = response.data.alunos.map(student => ({name: student.nome, studentId: student.id_aluno, studentCode: student.codigo}));
+            }
         },
     }
 }

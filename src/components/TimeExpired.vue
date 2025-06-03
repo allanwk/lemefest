@@ -7,6 +7,10 @@
             <v-card-text>
                 <p>{{ getMessage }}</p>
             </v-card-text>
+            <v-card-actions>
+                <v-spacer/>
+                <v-btn color="primary" @click="buyMore">Voltar para comprar mesas</v-btn>
+            </v-card-actions>
         </v-card>
     </v-container>
 </template>
@@ -36,12 +40,17 @@
         computed: {
             getMessage: function () {
                 if (this.step === this.steps.SELECTION_EXPIRED) {
-                    return "O tempo para escolher as mesas expirou";
+                    return "O tempo para escolher as mesas expirou. Você pode clicar no botão abaixo para voltar para a fila novamente.";
                 }
                 if (this.step === this.steps.PAYMENT_EXPIRED) {
-                    return "O tempo para pagamento expirou";
+                    return "O tempo para pagamento expirou. Você pode clicar no botão abaixo para voltar para a fila novamente.";
                 }
                 return null;
+            }
+        },
+        methods: {
+            buyMore: function () {
+                this.$emit('restart');
             }
         }
     }

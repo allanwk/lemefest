@@ -8,6 +8,10 @@
             <v-card-text>
                 <p>{{ getBookedResourcesText }}</p>
             </v-card-text>
+            <v-card-actions>
+                <v-spacer/>
+                <v-btn color="primary" @click="buyMore">Comprar mais mesas</v-btn>
+            </v-card-actions>
         </v-card>
     </v-container>
 </template>
@@ -48,6 +52,9 @@
                 } else {
                     window.setTimeout(this.loadBookedResources, 1000);
                 }
+            },
+            buyMore: function () {
+                this.$emit('restart');
             }
         }
     }

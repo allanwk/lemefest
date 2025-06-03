@@ -134,7 +134,13 @@ export default {
         getMySelectedResourceIds() {
             return this.selected.filter(id => {
                 const resource = this.resources.find(resource => resource.id_recurso === id);
-                return resource.id_status_recurso === 1 || resource.solicitado_por_mim === 1
+                return resource.id_status_recurso === 1 || (resource.id_status_recurso !== 4 && resource.solicitado_por_mim === 1)
+            })
+        },
+        getMyBookedResources() {
+            return this.selected.filter(id => {
+                const resource = this.resources.find(resource => resource.id_recurso === id);
+                return resource.id_status_recurso === 4 && resource.solicitado_por_mim === 1
             })
         },
         buyButtonLabel: function () {
@@ -150,7 +156,7 @@ export default {
             return "Total: R$ " + total.toFixed(2);
         },
         resourceLimitReached: function () {
-            return this.getMySelectedResourceIds.length >= this.tableLimit;
+            return (this.getMyBookedResources.length + this.getMySelectedResourceIds.length) >= this.tableLimit;
         }
     },
     methods: {
@@ -257,6 +263,10 @@ export default {
             this.$emit('next', paymentResponse);
         },
         getResourceState: function (item) {
+            if (item.id_status_recurso === 4 && item.solicitado_por_mim) {
+                return 4; //disabled colored
+            }
+
             if (item.id_status_recurso !== 1 && !item.solicitado_por_mim) {
                 return 3; //disabled dark
             }

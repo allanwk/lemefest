@@ -10,11 +10,11 @@
 
     <v-main class="background">
       <StartWaiting v-if="step === steps.START_WAITING" @next="step = steps.REGISTER"/>
-      <StartForm v-if='step === steps.REGISTER' @gotoStep='handleGotoStep' @next="step = steps.QUEUE"/>
+      <StartForm v-if='step === steps.REGISTER' @gotoStep='handleGotoStep' @next="step = steps.QUEUE" :fromRestart="restart"/>
       <ResourceList v-if='[steps.QUEUE, steps.SELECTION].includes(step)' @next="step = steps.PAYMENT" @timeExpired="step = steps.SELECTION_EXPIRED"/>
       <PaymentStep v-if='step === steps.PAYMENT' @next="step = steps.PAID" @timeExpired="step = steps.PAYMENT_EXPIRED"/>
-      <PurchaseFinished v-if='step === steps.PAID' />
-      <TimeExpired v-if='[steps.PAYMENT_EXPIRED, steps.SELECTION_EXPIRED].includes(step)' :step="step"/>
+      <PurchaseFinished v-if='step === steps.PAID' @restart="handleRestart"/>
+      <TimeExpired v-if='[steps.PAYMENT_EXPIRED, steps.SELECTION_EXPIRED].includes(step)' :step="step" @restart="handleRestart"/>
     </v-main>
   </v-app>
 </template>
@@ -51,11 +51,16 @@ export default {
       PAYMENT_EXPIRED: 6,
     },
     step: -1,
+    restart: false,
   }),
 
   methods: {
     handleGotoStep: function (stepId) {
       this.step = this.steps[Object.keys(this.steps).find(key => this.steps[key] === stepId)];
+    },
+    handleRestart: function () {
+      this.step = this.steps.REGISTER;
+      this.restart = true;
     }
   }
 };

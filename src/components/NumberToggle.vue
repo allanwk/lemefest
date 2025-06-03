@@ -1,7 +1,7 @@
 <template>
     <div 
       class="numbered-checkbox"
-      :class="{ 'checked': isChecked, 'disabled-cursor': state === 1, 'disabled-light': state === 2, 'disabled-dark': state === 3 }"
+      :class="{ 'checked': isChecked, 'disabled-cursor': state === 1, 'disabled-light': state === 2, 'disabled-dark': state === 3, 'disabled-color': state === 4 }"
       @click="toggle"
     >
       <input
@@ -124,6 +124,12 @@
   .numbered-checkbox.disabled-dark {
     border-color: grey;
     background-color: grey;
+    cursor: not-allowed;
+  }
+
+  .numbered-checkbox.disabled-color {
+    border-color: #6666B5;
+    background-color: #6666B5;
     cursor: not-allowed;
   }
   
