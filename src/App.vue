@@ -6,6 +6,13 @@
       dark
     >
       <v-toolbar-title>Festa Junina Leme 2025</v-toolbar-title>
+      <v-spacer></v-spacer>
+        <v-img
+        src='/colegio.png'
+        contain
+        height="40"
+        max-width="40"
+      ></v-img>
     </v-app-bar>
 
     <v-main class="background">
