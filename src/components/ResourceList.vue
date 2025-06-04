@@ -89,7 +89,6 @@ export default {
     data: function () {
         return {
             interval: null,
-            resourceInterval: null,
             step: 1,
             steps: {
                 REGISTER: 0,
@@ -117,7 +116,6 @@ export default {
     },
     beforeDestroy: function () {
         this.stopPollingState();
-        this.stopPollingResources();
     },
     computed: {
         getTitle: function () {
@@ -172,10 +170,6 @@ export default {
                 this.getState();
                 this.interval = window.setInterval(this.getState, 5000);
             }
-            if (!this.resourceInterval) {
-                this.getResources();
-                this.resourceInterval = window.setInterval(this.getResources, 10000);
-            }
         },
         stopPollingState: function () {
             if (this.interval) {
@@ -198,6 +192,12 @@ export default {
                 this.$toasted.error("Não foi possível consultar a fila");
                 return;
             }
+
+            if (this.step === this.steps.QUEUE && response.data.recursos) {
+                this.resources = response.data.recursos;
+                this.selected = this.resources.filter(resource => resource.id_status_recurso !== 1).map(resource => resource.id_recurso);
+            }
+
             const user = response.data.usuario;
             if (parseInt(user.segundos_restantes_selecao) < 0) {
                 this.stopPollingResources();
@@ -238,22 +238,8 @@ export default {
                 })
             }
         },
-        getResources: async function () {
-            let response;
-            try {
-                response = await this.$axios.post('/resource');
-            } catch (e) {
-                console.error(e);
-                this.$toasted.error("Não foi possível consultar os recursos", { position: 'top-center' });
-                return;
-            }
-            this.resources = response.data.recursos;
-            this.selected = this.resources.filter(resource => resource.id_status_recurso !== 1).map(resource => resource.id_recurso);
-        },
         startSelectionStep: function () {
-            this.stopPollingResources();
             this.step = this.steps.SELECTION;
-            this.getResources();
         },
         requestPickedResources: async function () {
             if (!this.getMySelectedResourceIds.length) {
@@ -273,7 +259,6 @@ export default {
             } finally {
                 this.buttonLoading = false;
             }
-            this.stopPollingResources();
             this.stopPollingState();
             this.$emit('next', paymentResponse);
         },
