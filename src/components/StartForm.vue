@@ -37,7 +37,7 @@
             </v-card-text>
             <v-card-actions>
                 <v-spacer />
-                <v-btn @click="clearConfirmationDialog = true" color="accent">Limpar</v-btn>
+                <v-btn @click="startClearAction" color="accent">Limpar</v-btn>
                 <v-btn v-if="!isStudentStep" @click="handleAction" color="primary">Salvar</v-btn>
                 <v-btn v-else :disabled="isStudentStep && !students.length" @click="handleAction" color="primary">Próximo</v-btn>
             </v-card-actions>
@@ -62,7 +62,7 @@
             <v-card>
                 <v-card-title>Confirmação</v-card-title>
                 <v-card-text>
-                    <p>{{ informedStudentsText }} Portanto você poderá escolher até <b style="color:#000084">{{ maxTables }} mesas.</b></p>
+                    <p>{{ informedStudentsText }} Portanto você poderá escolher até <b style="color:#000084">{{ maxTables }} mesas</b> (considerando também mesas que já tenha comprado em passos anteriores).</p>
                     <p>Aviso: após confirmar, não será possível voltar.</p>
                 </v-card-text>
                 <v-card-actions>
@@ -199,7 +199,7 @@ export default {
                     await this.registerUser();
                 })
             } else {
-                this.confirmationDialog = true;
+                this.checkIfCanBuyMoreResources();
             }
         },
         registerUser: async function () {
@@ -347,6 +347,23 @@ export default {
             if (response.data?.alunos) {
                 this.students = response.data.alunos.map(student => ({name: student.nome, studentId: student.id_aluno, studentCode: student.codigo}));
             }
+        },
+        startClearAction: function () {
+            if (this.fromRestart) {
+                return this.$toasted.error("Como você já comprou alguma mesa, não é possível remover os alunos identificados. Caso tenha adicionado um aluno incorretamente, por favor recarregue a página.")
+            }
+            this.clearConfirmationDialog = true;
+        },
+        checkIfCanBuyMoreResources: async function () {
+            const response = await this.$axios.post('/resource/booked');
+            const bookedResources = response.data?.recursos;
+
+            const maxResources = this.students.length * 2;
+            if (bookedResources != null && bookedResources.length >= maxResources) {
+                return this.$toasted.error("Você já comprou a quantidade máxima de mesas para o número de alunos identificados. Para comprar mais mesas, é necessário informar o código de mais alunos.");
+            }
+
+            this.confirmationDialog = true;
         },
     }
 }

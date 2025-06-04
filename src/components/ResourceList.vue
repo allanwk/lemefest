@@ -253,7 +253,7 @@ export default {
             this.getResources();
         },
         requestPickedResources: async function () {
-            if (!this.getMySelectedResourceIds) {
+            if (!this.getMySelectedResourceIds.length) {
                 this.$toasted.error("É necessário escolher ao menos uma mesa");
                 return;
             }
