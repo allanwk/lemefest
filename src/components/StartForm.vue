@@ -24,7 +24,7 @@
                         <p class="mt-4">{{ informedStudentsText }}</p>
                     </template>
                     <template v-else>
-                        <p>Por favor preencha corretamente. Precisamos desses dados para gerar a cobrança via PIX.</p>
+                        <p>Por favor preencha corretamente. Precisamos desses dados para processar o pagamento via PIX.</p>
                         <v-text-field label="Nome" required :rules="validationEnabled ? [rules.required] : []"
                             v-model="name" clearable></v-text-field>
                         <v-text-field label="CPF" required :rules="validationEnabled ? [rules.required, isValidCPF] : []"
@@ -43,6 +43,22 @@
             </v-card-actions>
         </v-card>
         </div>
+        <v-dialog v-model="dataConfirmationDialog">
+            <v-card>
+                <v-card-title>Os dados estão corretos?</v-card-title>
+                <v-card-text>
+                    <p>Nome: {{ name }}</p>
+                    <p>CPF: {{ identification }}</p>
+                    <p>E-mail: {{ email }}</p>
+                    <b>Verifique com cuidado, você não poderá alterá-los depois!</b>
+                </v-card-text>
+                <v-card-actions>
+                    <v-spacer/>
+                    <v-btn outline color="accent" @click="dataConfirmationDialog = false">Voltar</v-btn>
+                    <v-btn color="primary" @click="confirmBasicData">Confirmar</v-btn>
+                </v-card-actions>
+            </v-card>
+        </v-dialog>
         <v-dialog v-model="dialog">
             <v-card>
                 <v-card-title>
@@ -122,6 +138,7 @@ export default {
             dialog: false,
             confirmationDialog: false,
             clearConfirmationDialog: false,
+            dataConfirmationDialog: false,
             rules: {
                 required: v => !!v && v.trim().length >= 3 || 'Digite ao menos 3 caracteres',
                 validEmail: v => !!v && /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/i.test(v.trim()) || 'E-mail inválido'
@@ -196,7 +213,7 @@ export default {
                     if (!this.$refs.form.validate()) {
                         return;
                     }
-                    await this.registerUser();
+                    this.dataConfirmationDialog = true;
                 })
             } else {
                 this.checkIfCanBuyMoreResources();
@@ -365,6 +382,10 @@ export default {
 
             this.confirmationDialog = true;
         },
+        confirmBasicData: async function () {
+            this.dataConfirmationDialog = false;
+            await this.registerUser();
+        }
     }
 }
 </script>
