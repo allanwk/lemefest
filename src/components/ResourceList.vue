@@ -7,7 +7,7 @@
                         <countdown-timer :initial-time="remainingSeconds" ref="timer" message="Tempo para escolher: " />
                     </v-col>
                     <v-col v-else style="min-width: 170px; display: flex; align-content: center; justify-content: center;">
-                        <span class="mr-2">{{ getTitle }}</span>
+                        <span class="mr-2 keep-words">{{ getTitle }}</span>
                         <v-progress-circular v-if='step === steps.QUEUE' indeterminate color="primary" />
                     </v-col>
                 </v-row>
@@ -109,6 +109,7 @@ export default {
             remainingSeconds: null,
             informationDialog: true,
             shownAlert: false,
+            queuePosition: null,
         };
     },
     mounted: function () {
@@ -121,6 +122,12 @@ export default {
     computed: {
         getTitle: function () {
             if (this.step === this.steps.QUEUE) {
+                if (this.queuePosition <= 2) {
+                    return "Aguarde, você será o próximo a escolher.";
+                }
+                if (this.queuePosition != null) {
+                    return `Aguarde, você está em ${this.queuePosition}º lugar na fila.`;
+                }
                 return "Aguarde, você está na fila.";
             }
             if (this.step === this.steps.SELECTION) {
@@ -198,6 +205,11 @@ export default {
                 this.$emit('timeExpired');
                 return;
             }
+
+            if (this.step === this.steps.QUEUE && user.posicao != null) {
+                this.queuePosition = parseInt(user.posicao, 10);
+            }
+
             if (user.minha_vez === 1 && this.step === this.steps.QUEUE && user.limite_mesas != null) {
                 this.startSelectionStep();
                 this.tableLimit = parseInt(user.limite_mesas, 10);
@@ -322,5 +334,11 @@ export default {
 .border {
     border: 2px solid #ccc;
     border-radius: 4px;
+}
+
+.keep-words {
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    word-break: keep-all;
 }
 </style>
