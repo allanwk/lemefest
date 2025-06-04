@@ -119,6 +119,7 @@
                     let copyText = document.querySelector("#textToCopy");
                     copyText.select();
                     document.execCommand("copy");
+                    this.$toasted.success('Código copiado!');
                 } catch (e) {
                     console.error(e);
                     this.$toasted.error("Não foi possível copiar o código");
