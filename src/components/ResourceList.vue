@@ -217,7 +217,9 @@ export default {
                 this.$nextTick(() => {
                     this.$refs.timer.startTimer();
                 });
-                this.$toasted.success("Chegou sua vez na fila! Por favor selecione suas mesas.");
+                this.$toasted.success("Chegou sua vez na fila! Por favor selecione suas mesas.", {
+                    position: 'top-center',
+                });
                 return;
             }
             if (user.minha_vez === 1 && this.step === this.steps.SELECTION) {
@@ -225,6 +227,7 @@ export default {
 
                 if (!this.shownAlert && parseInt(this.remainingSeconds, 10) <= 60) {
                     this.$toasted.error("Atenção! Você tem menos de um minuto para terminar de selecionar suas mesas. Termine a seleção e clique em \"Comprar mesas\" dentro do tempo limite para garantir suas mesas.", {
+                        position: 'top-center',
                         duration: 8000,
                     });
                     this.shownAlert = true;
@@ -241,7 +244,7 @@ export default {
                 response = await this.$axios.post('/resource');
             } catch (e) {
                 console.error(e);
-                this.$toasted.error("Não foi possível consultar os recursos");
+                this.$toasted.error("Não foi possível consultar os recursos", { position: 'top-center' });
                 return;
             }
             this.resources = response.data.recursos;
@@ -254,7 +257,7 @@ export default {
         },
         requestPickedResources: async function () {
             if (!this.getMySelectedResourceIds.length) {
-                this.$toasted.error("É necessário escolher ao menos uma mesa");
+                this.$toasted.error("É necessário escolher ao menos uma mesa", { position: 'top-center' });
                 return;
             }
             this.buttonLoading = true;
@@ -265,7 +268,7 @@ export default {
                 });
             } catch (e) {
                 console.error(e);
-                this.$toasted.error("Não foi possível solicitar os recursos");
+                this.$toasted.error("Não foi possível solicitar os recursos", { position: 'top-center' });
                 return;
             } finally {
                 this.buttonLoading = false;
