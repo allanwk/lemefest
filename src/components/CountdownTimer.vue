@@ -97,7 +97,7 @@
             if (this.remainingTime <= 0) {
               this.remainingTime = 0
               this.clearTimer()
-              this.$emit('timer-end')
+              this.$emit('timerEnd')
             }
           }, 1000)
         }

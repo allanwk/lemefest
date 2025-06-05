@@ -1,93 +1,99 @@
 <template>
     <v-container fluid fill-height>
-        <v-card style="width:100%">
-            <v-card-title class="py-1">
-                <v-row justify="center" align="center">
-                    <v-col v-if="step === steps.SELECTION && remainingSeconds != null">
-                        <countdown-timer :initial-time="remainingSeconds" ref="timer" message="Tempo para escolher: " />
-                    </v-col>
-                    <v-col v-else style="min-width: 170px; display: flex; align-content: center; justify-content: center;">
-                        <span class="mr-2 keep-words">{{ getTitle }}</span>
-                        <v-progress-circular v-if='step === steps.QUEUE' indeterminate color="primary" />
-                    </v-col>
-                </v-row>
-            </v-card-title>
-            <v-card-text>
-                <div class="table-map">
-                    <div style="grid-area: 1 / 14 / span 1 / span 7; display: grid; place-items: center;">
-                        <h1>Cantina e bar</h1>
-                    </div>
-                    <div style="grid-area: 3 / 21 / span 9 / span 1; display: grid; place-items: center;">
-                        <h1 style="writing-mode: vertical-rl">Palco da quadra / caixa</h1>
-                    </div>
-                    <div class="border" style="grid-area: 2 / 1 / 12 / 21; margin:-10px"></div>
-                    <NumberToggle v-for="item in positionedResources" :key="item.id_recurso"
-                        v-model="selected" :value="item.id_recurso" :number="parseInt(item.nome_recurso_short, 10)"
-                        :state="getResourceState(item)" :readonly="step === steps.QUEUE" :style="getItemStyle(item)"/>
-                    <div class="palco border">
-                        <div style="grid-area: 1 / 1 / span 4 / span 7; display: grid; place-items: center;">
-                            <h1>Apresentações</h1>
-                        </div>
-                        <div class="border" style="grid-area: 5 / 1 / span 1 / span 3; display: grid; place-items: center;">
-                            <h2>Fotos</h2>
-                        </div>
-                        <div class="border" style="grid-area: 5 / 5 / span 1 / span 3; display: grid; place-items: center;">
-                            <h2>Fotos</h2>
-                        </div>
-                    </div>
-                    <div style="grid-area: 12 / 1 / 12 / 7">
-                        <h1 style="text-align: left;">Entrada</h1>
-                        <v-icon style="transform: scaleX(4) scaleY(1); transform-origin:left;">mdi-arrow-right-bold</v-icon>
-                    </div>
-                    <div style="grid-area: 13 / 1 / 13 / 21; display: grid; place-items: center;">
-                        <h1 style="text-align: left;">Arquibancada</h1>
-                    </div>
-                </div>
-            </v-card-text>
-        </v-card>
-        <v-dialog v-model="informationDialog">
-            <v-card>
-                <v-card-title>
-                    Seleção de mesas
+        <FullscreenLoader v-if="!loaded"/>
+        <template v-else>
+            <v-card style="width:100%">
+                <v-card-title class="py-1">
+                    <v-row justify="center" align="center">
+                        <v-col v-if="step === steps.SELECTION && remainingSeconds != null">
+                            <countdown-timer :initial-time="remainingSeconds" ref="timer" message="Tempo para escolher: " />
+                        </v-col>
+                        <v-col v-else style="min-width: 170px; display: flex; align-content: center; justify-content: center;">
+                            <span class="mr-2 keep-words">{{ getTitle }}</span>
+                            <v-progress-circular v-if='step === steps.QUEUE' indeterminate color="primary" />
+                        </v-col>
+                    </v-row>
                 </v-card-title>
                 <v-card-text>
-                    <ul>
-                        <li>Para navegar pelo mapa, basta arrastar a tela</li>
-                        <li>Quando chegar a sua vez na fila, você poderá clicar nas mesas para escolhê-las</li>
-                        <li>Fique atento ao <b>tempo limite</b> para escolher as mesas. Quando for sua vez, um contador aparecerá no topo da tela.</li>
-                        <li>Quando tiver escolhido suas mesas, basta clicar no botão "Comprar mesas" na parte inferior da tela</li>
-                    </ul>
+                    <div class="table-map">
+                        <div style="grid-area: 1 / 14 / span 1 / span 7; display: grid; place-items: center;">
+                            <h1>Cantina e bar</h1>
+                        </div>
+                        <div style="grid-area: 3 / 21 / span 9 / span 1; display: grid; place-items: center;">
+                            <h1 style="writing-mode: vertical-rl">Palco da quadra / caixa</h1>
+                        </div>
+                        <div class="border" style="grid-area: 2 / 1 / 12 / 21; margin:-10px"></div>
+                        <NumberToggle v-for="item in positionedResources" :key="item.id_recurso"
+                            v-model="selected" :value="item.id_recurso" :number="parseInt(item.nome_recurso_short, 10)"
+                            :state="getResourceState(item)" :readonly="step === steps.QUEUE" :style="getItemStyle(item)"/>
+                        <div class="palco border">
+                            <div style="grid-area: 1 / 1 / span 4 / span 7; display: grid; place-items: center;">
+                                <h1>Apresentações</h1>
+                            </div>
+                            <div class="border" style="grid-area: 5 / 1 / span 1 / span 3; display: grid; place-items: center;">
+                                <h2>Fotos</h2>
+                            </div>
+                            <div class="border" style="grid-area: 5 / 5 / span 1 / span 3; display: grid; place-items: center;">
+                                <h2>Fotos</h2>
+                            </div>
+                        </div>
+                        <div style="grid-area: 12 / 1 / 12 / 7">
+                            <h1 style="text-align: left;">Entrada</h1>
+                            <v-icon style="transform: scaleX(4) scaleY(1); transform-origin:left;">mdi-arrow-right-bold</v-icon>
+                        </div>
+                        <div style="grid-area: 13 / 1 / 13 / 21; display: grid; place-items: center;">
+                            <h1 style="text-align: left;">Arquibancada</h1>
+                        </div>
+                    </div>
                 </v-card-text>
-                <v-card-actions>
-                    <v-spacer/>
-                    <v-btn color="primary" @click="informationDialog = false">OK</v-btn>
-                </v-card-actions>
             </v-card>
-        </v-dialog>
-        <v-footer color="primary" app style="justify-content: end; gap: 5px">
-            <template v-if="step === steps.SELECTION">
-                <span style="color:background">{{ totalPriceLabel }}</span>
-                <v-spacer />
-                <v-btn color='background' @click="informationDialog = true">Ajuda</v-btn>
-                <v-btn color='background' @click="requestPickedResources" :loading="buttonLoading">{{ buyButtonLabel }}</v-btn>
-            </template>
-            <v-btn v-else color='background' @click="informationDialog = true">Ajuda</v-btn>
-        </v-footer>
+            <v-dialog v-model="informationDialog">
+                <v-card>
+                    <v-card-title>
+                        Seleção de mesas
+                    </v-card-title>
+                    <v-card-text>
+                        <ul>
+                            <li>Para navegar pelo mapa, basta arrastar a tela</li>
+                            <li>Quando chegar a sua vez na fila, você poderá clicar nas mesas para escolhê-las</li>
+                            <li>Fique atento ao <b>tempo limite</b> para escolher as mesas. Quando for sua vez, um contador aparecerá no topo da tela.</li>
+                            <li>Quando tiver escolhido suas mesas, basta clicar no botão "Comprar mesas" na parte inferior da tela</li>
+                        </ul>
+                    </v-card-text>
+                    <v-card-actions>
+                        <v-spacer/>
+                        <v-btn color="primary" @click="informationDialog = false">OK</v-btn>
+                    </v-card-actions>
+                </v-card>
+            </v-dialog>
+            <v-footer color="primary" app style="justify-content: end; gap: 5px">
+                <template v-if="step === steps.SELECTION">
+                    <span style="color:background">{{ totalPriceLabel }}</span>
+                    <v-spacer />
+                    <v-btn color='background' @click="informationDialog = true">Ajuda</v-btn>
+                    <v-btn color='background' @click="requestPickedResources" :loading="buttonLoading">{{ buyButtonLabel }}</v-btn>
+                </template>
+                <v-btn v-else color='background' @click="informationDialog = true">Ajuda</v-btn>
+            </v-footer>
+        </template>
     </v-container>
 </template>
 
 <script>
 import NumberToggle from './NumberToggle';
 import CountdownTimer from './CountdownTimer';
+import FullscreenLoader from './FullscreenLoader';
 
 export default {
     name: 'ResourceList',
     components: {
         NumberToggle,
         CountdownTimer,
+        FullscreenLoader
     },
     data: function () {
         return {
+            loaded: false,
             interval: null,
             step: 1,
             steps: {
@@ -200,9 +206,10 @@ export default {
                 return;
             }
 
-            if (this.step === this.steps.QUEUE && response.data.recursos) {
+            if ((this.step === this.steps.QUEUE || !this.resources.length) && response.data.recursos) {
                 this.resources = response.data.recursos;
                 this.selected = this.resources.filter(resource => resource.id_status_recurso !== 1).map(resource => resource.id_recurso);
+                this.loaded = true;
             }
 
             const user = response.data.usuario;

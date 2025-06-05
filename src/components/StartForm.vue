@@ -17,7 +17,7 @@
                                 clearable v-mask="'###########'"></v-text-field>
                             </v-col>
                             <v-col cols="5">
-                                <v-btn color="primary" outlined @click='checkStudent'>Adicionar</v-btn>
+                                <v-btn color="primary" outlined @click='checkStudent' :loading="loadingAddStudent">Adicionar</v-btn>
                             </v-col>
                         </v-row>
                         <v-divider></v-divider>
@@ -39,7 +39,7 @@
                 <v-spacer />
                 <v-btn @click="startClearAction" color="accent">Limpar</v-btn>
                 <v-btn v-if="!isStudentStep" @click="handleAction" color="primary">Salvar</v-btn>
-                <v-btn v-else :disabled="isStudentStep && !students.length" @click="handleAction" color="primary">Próximo</v-btn>
+                <v-btn v-else :disabled="isStudentStep && !students.length" @click="handleAction" :loading="handleNextLoading" color="primary">Próximo</v-btn>
             </v-card-actions>
         </v-card>
         </div>
@@ -139,6 +139,8 @@ export default {
             confirmationDialog: false,
             clearConfirmationDialog: false,
             dataConfirmationDialog: false,
+            loadingAddStudent: false,
+            handleNextLoading: false,
             rules: {
                 required: v => !!v && v.trim().length >= 3 || 'Digite ao menos 3 caracteres',
                 validEmail: v => !!v && /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/i.test(v.trim()) || 'E-mail inválido'
@@ -315,6 +317,7 @@ export default {
         },
         checkStudent: async function () {
             this.validationEnabled = true;
+            this.loadingAddStudent = true;
             this.$nextTick(async () => {
                 if (!this.$refs.form.validate()) {
                     return;
@@ -335,6 +338,8 @@ export default {
                     }
                     console.error(errorResponse);
                     return this.$toasted.error("Erro inesperado ao consultar aluno");
+                } finally {
+                    this.loadingAddStudent = false;
                 }
                 this.foundStudentName = response.data.aluno.nome;
                 this.foundStudentId = response.data.aluno.id_aluno;
@@ -372,15 +377,22 @@ export default {
             this.clearConfirmationDialog = true;
         },
         checkIfCanBuyMoreResources: async function () {
-            const response = await this.$axios.post('/resource/booked');
-            const bookedResources = response.data?.recursos;
+            this.handleNextLoading = true;
+            try {
+                const response = await this.$axios.post('/resource/booked');
+                const bookedResources = response.data?.recursos;
 
-            const maxResources = this.students.length * 2;
-            if (bookedResources != null && bookedResources.length >= maxResources) {
-                return this.$toasted.error("Você já comprou a quantidade máxima de mesas para o número de alunos identificados. Para comprar mais mesas, é necessário informar o código de mais alunos.");
+                const maxResources = this.students.length * 2;
+                if (bookedResources != null && bookedResources.length >= maxResources) {
+                    return this.$toasted.error("Você já comprou a quantidade máxima de mesas para o número de alunos identificados. Para comprar mais mesas, é necessário informar o código de mais alunos.");
+                }
+
+                this.confirmationDialog = true;
+            } catch (e) {
+                this.$toasted.error("Erro inesperado!");
+            } finally {
+                this.handleNextLoading = false;
             }
-
-            this.confirmationDialog = true;
         },
         confirmBasicData: async function () {
             this.dataConfirmationDialog = false;

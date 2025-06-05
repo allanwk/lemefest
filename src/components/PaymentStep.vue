@@ -1,6 +1,7 @@
 <template>
     <v-container fluid fill-height>
-        <v-card>
+        <FullscreenLoader v-if="!loaded"/>
+        <v-card v-else>
             <v-card-title>
                 <v-row justify="center" align="center">
                     <v-col class="keep-words" v-if="payment_value != null">
@@ -35,11 +36,13 @@
 
 <script>
     import CountdownTimer from './CountdownTimer';
+    import FullscreenLoader from './FullscreenLoader';
 
     export default {
         name: 'PaymentStep',
         components: {
             CountdownTimer,
+            FullscreenLoader,
         },
         data: function () {
             return {
@@ -49,6 +52,7 @@
                 interval: null,
                 remainingSeconds: null,
                 shownAlert: false,
+                loaded: false,
             }
         },
         mounted: function () {
@@ -60,12 +64,17 @@
         },
         methods: {
             loadPayment: async function () {
-                const response = await this.$axios.post('/payment');
-                if (response.data.pagamento) {
-                    const { qr_code, qr_code_base64, valor } = response.data.pagamento;
-                    this.qr_code = qr_code;
-                    this.qr_code_base64 = qr_code_base64;
-                    this.payment_value = Number(valor);
+                try {
+                    const response = await this.$axios.post('/payment');
+                    if (response.data.pagamento) {
+                        const { qr_code, qr_code_base64, valor } = response.data.pagamento;
+                        this.qr_code = qr_code;
+                        this.qr_code_base64 = qr_code_base64;
+                        this.payment_value = Number(valor);
+                        this.loaded = true;
+                    }
+                } catch (e) {
+                    this.$toasted.error("Erro ao carregar pagamento. Por favor recarregue a página em instantes");
                 }
             },
             startPolling: function () {
@@ -111,7 +120,11 @@
                 }
 
                 this.$nextTick(() => {
-                    this.$refs.timer.startTimer();
+                    if (this.$refs.timer) {
+                        this.$refs.timer.startTimer();
+                    } else {
+                        window.setTimeout(this.startTimer, 1000);
+                    }
                 })
             },
             copyCode: async function () {
@@ -125,6 +138,11 @@
                     this.$toasted.error("Não foi possível copiar o código");
                 }
             },
+            startTimer: function () {
+                if (this.$refs.timer) {
+                    this.$refs.timer.startTimer();
+                }
+            }
         }
     }
 </script>

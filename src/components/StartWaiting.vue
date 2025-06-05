@@ -1,7 +1,10 @@
 <template>
     <v-container fluid fill-height>
         <FullscreenLoader v-if="!loaded"/>
-        <CountdownTimer v-else-if="remainingSeconds != null" :initial-time="remainingSeconds" ref="timer" message="O cadastro para seleção das mesas começará em:"/>
+        <CountdownTimer v-else-if="remainingSeconds != null" :initial-time="remainingSeconds" ref="timer" message="O cadastro para seleção das mesas começará em:" @timerEnd="waitThenCheckIfStarted"/>
+        <v-card v-if="unavailable">
+            <v-card-title class="keep-words">Parece que o sistema ainda não está disponível, tente novamente mais tarde.</v-card-title>
+        </v-card>
     </v-container>
 </template>
 
@@ -20,14 +23,13 @@
                 loaded: false,
                 remainingSeconds: null,
                 interval: null,
+                retried: false,
+                unavailable: false,
+                timerEnded: false,
             }
         },
         mounted: async function () {
             await this.checkIfStarted();
-            this.startPolling();
-        },
-        beforeDestroy: function () {
-            this.stopPolling();
         },
         methods: {
             checkIfStarted: async function () {
@@ -35,7 +37,6 @@
                     const response = await this.$axios.post('/state/getStarted');
                     if (response.data.segundos_ate_liberacao != null) {
                         if (parseInt(response.data.segundos_ate_liberacao, 10) <= 0) {
-                            this.stopPolling();
                             this.$emit('next');
                         } else {
                             this.loaded = true;
@@ -46,20 +47,30 @@
                         }
                     }
                 } catch (e) {
-                    console.error(e);
+                    console.log(e);
+                    if (!this.retried || this.timerEnded) {
+                        this.retried = true;
+                        window.setTimeout(this.checkIfStarted, 5000);
+                    } else {
+                        this.loaded = true;
+                        this.unavailable = true;
+                    }
                 }
             },
-            startPolling: function () {
-                if (this.interval == null) {
-                    this.interval = window.setInterval(this.checkIfStarted, 5000);
-                }
-            },
-            stopPolling: function () {
-                if (this.interval != null) {
-                    window.clearInterval(this.interval);
-                    this.interval = null;
-                }
-            },
+            waitThenCheckIfStarted: async function () {
+                this.loaded = false;
+                this.timerEnded = true;
+                const rand = Math.floor(Math.random() * (500 + 1));
+                window.setTimeout(this.checkIfStarted, rand);
+            }
         },
     }
 </script>
+
+<style scoped>
+    .keep-words {
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        word-break: keep-all;
+    }
+</style>
