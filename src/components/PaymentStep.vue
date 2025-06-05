@@ -3,7 +3,7 @@
         <v-card>
             <v-card-title>
                 <v-row justify="center" align="center">
-                    <v-col class="keep-words">
+                    <v-col class="keep-words" v-if="payment_value != null">
                         Pague R${{ payment_value.toFixed(2) }} via PIX
                     </v-col>
                     <v-col v-if="remainingSeconds != null">

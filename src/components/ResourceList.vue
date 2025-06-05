@@ -109,6 +109,12 @@ export default {
             informationDialog: true,
             shownAlert: false,
             queuePosition: null,
+            pollingInterval: 60000,
+            pollingIntervals: {
+                EVERY_MINUTE: 60000,
+                EVERY_10_SECONDS: 10000,
+                EVERY_5_SECONDS: 5000,
+            }
         };
     },
     mounted: function () {
@@ -168,7 +174,7 @@ export default {
         startPolling: function () {
             if (!this.interval) {
                 this.getState();
-                this.interval = window.setInterval(this.getState, 5000);
+                this.interval = window.setInterval(this.getState, this.pollingInterval);
             }
         },
         stopPollingState: function () {
@@ -177,11 +183,12 @@ export default {
                 this.interval = null;
             }
         },
-        stopPollingResources: function () {
-            if (this.resourceInterval) {
-                window.clearInterval(this.resourceInterval);
-                this.resourceInterval = null;
+        changePollingRate: function (pollingInterval) {
+            this.pollingInterval = pollingInterval;
+            if (this.interval) {
+                window.clearInterval(this.interval);
             }
+            this.interval = window.setInterval(this.getState, pollingInterval);
         },
         getState: async function () {
             let response;
@@ -200,7 +207,6 @@ export default {
 
             const user = response.data.usuario;
             if (parseInt(user.segundos_restantes_selecao) < 0) {
-                this.stopPollingResources();
                 this.stopPollingState();
                 this.$emit('timeExpired');
                 return;
@@ -208,6 +214,11 @@ export default {
 
             if (this.step === this.steps.QUEUE && user.posicao != null) {
                 this.queuePosition = parseInt(user.posicao, 10);
+                if (this.queuePosition === 1) {
+                    this.changePollingRate(this.pollingIntervals.EVERY_5_SECONDS);
+                } else if (this.queuePosition <= 2) {
+                    this.changePollingRate(this.pollingIntervals.EVERY_10_SECONDS);
+                }
             }
 
             if (user.minha_vez === 1 && this.step === this.steps.QUEUE && user.limite_mesas != null) {
@@ -240,6 +251,7 @@ export default {
         },
         startSelectionStep: function () {
             this.step = this.steps.SELECTION;
+            this.changePollingRate(this.pollingIntervals.EVERY_5_SECONDS);
         },
         requestPickedResources: async function () {
             if (!this.getMySelectedResourceIds.length) {
