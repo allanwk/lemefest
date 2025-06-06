@@ -6,7 +6,7 @@
                 <v-card-title class="py-1">
                     <v-row justify="center" align="center">
                         <v-col v-if="step === steps.SELECTION && remainingSeconds != null">
-                            <countdown-timer :initial-time="remainingSeconds" ref="timer" message="Tempo para escolher: " />
+                            <countdown-timer :initial-time="remainingSeconds" ref="timer" message="Tempo para escolher: " @timerEnd="atTimerEnd"/>
                         </v-col>
                         <v-col v-else style="min-width: 170px; display: flex; align-content: center; justify-content: center;">
                             <span class="mr-2 keep-words">{{ getTitle }}</span>
@@ -120,7 +120,8 @@ export default {
                 EVERY_MINUTE: 60000,
                 EVERY_10_SECONDS: 10000,
                 EVERY_5_SECONDS: 5000,
-            }
+            },
+            timeout: null,
         };
     },
     mounted: function () {
@@ -128,6 +129,9 @@ export default {
     },
     beforeDestroy: function () {
         this.stopPollingState();
+        if (this.timeout) {
+            window.clearTimeout(this.timeout);
+        }
     },
     computed: {
         getTitle: function () {
@@ -309,6 +313,10 @@ export default {
                 "grid-row": item.row_start + 1 + " / span " + (item.row_end - item.row_start + 1),
                 "grid-column": item.column_start + " / span " + (item.column_end - item.column_start + 1)
             }
+        },
+        atTimerEnd: function () {
+            this.stopPollingState();
+            this.timeout = window.setTimeout(this.getState, 1000);
         }
     }
 }

@@ -8,7 +8,7 @@
                         Pague R${{ payment_value.toFixed(2) }} via PIX
                     </v-col>
                     <v-col v-if="remainingSeconds != null">
-                        <countdown-timer :initial-time="remainingSeconds" ref="timer" message="Tempo restante"/>
+                        <countdown-timer :initial-time="remainingSeconds" ref="timer" message="Tempo restante" @timerEnd="atTimerEnd"/>
                     </v-col>
                 </v-row>
             </v-card-title>
@@ -53,6 +53,7 @@
                 remainingSeconds: null,
                 shownAlert: false,
                 loaded: false,
+                timeout: null,
             }
         },
         mounted: function () {
@@ -61,6 +62,9 @@
         },
         beforeDestroy: function () {
             this.stopPolling();
+            if (this.timeout) {
+                window.clearTimeout(this.timeout);
+            }
         },
         methods: {
             loadPayment: async function () {
@@ -142,6 +146,10 @@
                 if (this.$refs.timer) {
                     this.$refs.timer.startTimer();
                 }
+            },
+            atTimerEnd: function () {
+                this.stopPolling();
+                this.timeout = window.setTimeout(this.getState, 1000);
             }
         }
     }
