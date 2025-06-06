@@ -7,14 +7,14 @@
                 {{ cardTitle }}
             </v-card-title>
             <v-card-text>
-                <v-form ref='form' lazy-validation>
+                <v-form ref='form' lazy-validation @submit.prevent="handleSubmit">
                     <template v-if="isStudentStep">
                         <p>Para cada aluno identificado, você poderá comprar até 2 mesas</p>
                         <v-row align="center" justify="center">
                             <v-col>
                                 <v-text-field label="RM do aluno" required
                                 :rules="validationEnabled ? [rules.required] : []" v-model="studentCode"
-                                clearable v-mask="'###########'"></v-text-field>
+                                clearable v-mask="'###########'" inputmode="numeric" pattern="[0-9]*"></v-text-field>
                             </v-col>
                             <v-col cols="5">
                                 <v-btn color="primary" outlined @click='checkStudent' :loading="loadingAddStudent">Adicionar</v-btn>
@@ -25,13 +25,13 @@
                     </template>
                     <template v-else>
                         <p>Por favor preencha corretamente. Precisamos desses dados para processar o pagamento via PIX.</p>
-                        <v-text-field label="Nome" required :rules="validationEnabled ? [rules.required] : []"
+                        <v-text-field label="Nome Completo" required :rules="validationEnabled ? [rules.required] : []"
                             v-model="name" clearable></v-text-field>
                         <v-text-field label="CPF" required :rules="validationEnabled ? [rules.required, isValidCPF] : []"
-                            v-model="identification" clearable v-mask="'###.###.###-##'"></v-text-field>
+                            v-model="identification" clearable v-mask="'###.###.###-##'" inputmode="numeric" pattern="[0-9]*"></v-text-field>
                         <v-text-field label="Email" required
                             :rules="validationEnabled ? [rules.required, rules.validEmail] : []" v-model="email"
-                            clearable></v-text-field>
+                            clearable autocapitalize="off" style="text-transform: none" @keypress.enter.prevent="handleSubmit"></v-text-field>
                     </template>
                 </v-form>
             </v-card-text>
@@ -102,6 +102,15 @@
                 </v-card-actions>
             </v-card>
         </v-dialog>
+        <v-dialog v-model="errorDialog">
+            <v-card>
+                <v-card-title class="keep-words">{{ errorDialogMessage }}</v-card-title>
+                <v-card-actions>
+                    <v-spacer/>
+                    <v-btn outline color="primary" @click="errorDialog = false">OK</v-btn>
+                </v-card-actions>
+            </v-card>
+        </v-dialog>
     </v-container>
 </template>
 
@@ -141,6 +150,8 @@ export default {
             dataConfirmationDialog: false,
             loadingAddStudent: false,
             handleNextLoading: false,
+            errorDialog: false,
+            errorDialogMessage: null,
             rules: {
                 required: v => !!v && v.trim().length >= 3 || 'Digite ao menos 3 caracteres',
                 validEmail: v => !!v && /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/i.test(v.trim()) || 'E-mail inválido'
@@ -207,6 +218,20 @@ export default {
             localStorage.setItem("uuid_usuario", uuid);
             this.uuid = uuid;
             this.loaded = true;
+        },
+        handleSubmit: function () {
+            console.log("handleSubmit")
+            if (this.isStudentStep) {
+                this.validationEnabled = true;
+                this.$nextTick(async () => {
+                    if (!this.$refs.form.validate()) {
+                        return;
+                    }
+                    this.checkStudent();
+                });
+            } else {
+                this.handleAction();
+            }
         },
         handleAction: function () {
             if (!this.isStudentStep) {
@@ -317,27 +342,25 @@ export default {
         },
         checkStudent: async function () {
             this.validationEnabled = true;
-            this.loadingAddStudent = true;
             this.$nextTick(async () => {
                 if (!this.$refs.form.validate()) {
                     return;
                 }
                 if (this.students.find(student => student.studentCode === this.studentCode.trim())) {
-                    this.$toasted.error("Você já adicionou esse aluno");
+                    this.showError("Você já adicionou esse aluno.");
                     return;
                 }
-
+                this.loadingAddStudent = true;
                 let response;
                 try {
                     response = await this.$axios.post('/student/get', { codigo_aluno: this.studentCode.trim() })
                 } catch (errorResponse) {
                     if (errorResponse.status === 404) {
-                        return this.$toasted.error("Aluno não encontrado, por favor revise o código digitado.");
+                        return this.showError("Aluno não encontrado, por favor revise o código digitado.");
                     } else if (errorResponse.status === 400) {
-                        return this.$toasted.error("O aluno informado já está vinculado a outro usuário.");
+                        return this.showError("O aluno informado já está vinculado a outro usuário.");
                     }
-                    console.error(errorResponse);
-                    return this.$toasted.error("Erro inesperado ao consultar aluno");
+                    return this.showError("Erro inesperado ao consultar aluno.");
                 } finally {
                     this.loadingAddStudent = false;
                 }
@@ -397,7 +420,21 @@ export default {
         confirmBasicData: async function () {
             this.dataConfirmationDialog = false;
             await this.registerUser();
+        },
+        showError: function (errorMessage) {
+            this.errorDialogMessage = errorMessage;
+            this.$nextTick(() => {
+                this.errorDialog = true;
+            })
         }
     }
 }
 </script>
+
+<style>
+    .keep-words {
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        word-break: keep-all;
+    }
+</style>
