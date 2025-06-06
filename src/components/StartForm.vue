@@ -29,7 +29,7 @@
                             v-model="name" clearable></v-text-field>
                         <v-text-field label="CPF" required :rules="validationEnabled ? [rules.required, isValidCPF] : []"
                             v-model="identification" clearable v-mask="'###.###.###-##'" inputmode="numeric" pattern="[0-9]*"></v-text-field>
-                        <v-text-field label="Email" required
+                        <v-text-field label="Email" type="email" required
                             :rules="validationEnabled ? [rules.required, rules.validEmail] : []" v-model="email"
                             clearable autocapitalize="off" style="text-transform: none" @keypress.enter.prevent="handleSubmit"></v-text-field>
                     </template>

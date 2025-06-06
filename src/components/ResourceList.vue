@@ -23,7 +23,7 @@
                             <h1 style="writing-mode: vertical-rl">Palco da quadra / caixa</h1>
                         </div>
                         <div class="border" style="grid-area: 2 / 1 / 12 / 21; margin:-10px"></div>
-                        <NumberToggle v-for="item in positionedResources" :key="item.id_recurso"
+                        <NumberToggle v-for="item in resources" :key="item.id_recurso"
                             v-model="selected" :value="item.id_recurso" :number="parseInt(item.nome_recurso_short, 10)"
                             :state="getResourceState(item)" :readonly="step === steps.QUEUE" :style="getItemStyle(item)"/>
                         <div class="palco border">
@@ -148,9 +148,6 @@ export default {
                 return "Tempo para escolher:";
             }
             return null;
-        },
-        positionedResources() {
-            return this.resources.filter(item => item.column_start != null);
         },
         getMySelectedResourceIds() {
             return this.selected.filter(id => {
