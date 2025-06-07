@@ -111,6 +111,7 @@ export default {
             qr_code_base64: null,
             buttonLoading: false,
             tableLimit: 0,
+            limitePista: 0,
             remainingSeconds: null,
             informationDialog: true,
             shownAlert: false,
@@ -161,6 +162,18 @@ export default {
                 return resource.id_status_recurso === 4 && resource.solicitado_por_mim === 1
             })
         },
+        getMySelectedResourceIdsPista() {
+            return this.selected.filter(id => {
+                const resource = this.resources.find(resource => resource.id_recurso === id);
+                return resource.pista && (resource.id_status_recurso === 1 || (resource.id_status_recurso !== 4 && resource.solicitado_por_mim === 1))
+            })
+        },
+        getMyBookedResourcesPista() {
+            return this.selected.filter(id => {
+                const resource = this.resources.find(resource => resource.id_recurso === id);
+                return resource.pista && (resource.id_status_recurso === 4 && resource.solicitado_por_mim === 1)
+            })
+        },
         buyButtonLabel: function () {
             if (this.getMySelectedResourceIds.length === 1) {
                 return "Comprar mesa";
@@ -175,6 +188,9 @@ export default {
         },
         resourceLimitReached: function () {
             return (this.getMyBookedResources.length + this.getMySelectedResourceIds.length) >= this.tableLimit;
+        },
+        pistaLimitReached: function () {
+            return (this.getMyBookedResourcesPista.length + this.getMySelectedResourceIdsPista.length) >= this.limitePista;
         }
     },
     methods: {
@@ -232,6 +248,7 @@ export default {
             if (user.minha_vez === 1 && this.step === this.steps.QUEUE && user.limite_mesas != null) {
                 this.startSelectionStep();
                 this.tableLimit = parseInt(user.limite_mesas, 10);
+                this.limitePista = parseInt(user.limite_mesas_pista, 10);
                 this.remainingSeconds = user.segundos_restantes_selecao;
                 this.$nextTick(() => {
                     this.$refs.timer.startTimer();
@@ -295,7 +312,7 @@ export default {
                 return 1; //disabled, but no appearance change
             }
 
-            if (this.resourceLimitReached && this.selected.findIndex(it => it === item.id_recurso) === -1) {
+            if (((item.pista && this.pistaLimitReached) || this.resourceLimitReached) && this.selected.findIndex(it => it === item.id_recurso) === -1) {
                 return 2; //disabled light
             }
 
