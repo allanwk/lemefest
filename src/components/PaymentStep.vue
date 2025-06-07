@@ -1,7 +1,7 @@
 <template>
     <v-container fluid fill-height class="d-flex justify-center">
         <FullscreenLoader v-if="!loaded"/>
-        <v-card v-else max-width="500">
+        <v-card v-else class="payment-card">
             <v-card-title>
                 <v-row justify="center" align="center">
                     <v-col class="keep-words" v-if="payment_value != null">
@@ -160,5 +160,9 @@
         word-wrap: break-word;
         overflow-wrap: break-word;
         word-break: keep-all;
+    }
+
+    .payment-card {
+        max-width: min(100vw, 370px);
     }
 </style>
