@@ -1,8 +1,8 @@
 <template>
-    <v-container fluid fill-height>
+    <v-container fluid fill-height class="d-flex justify-center">
         <FullscreenLoader v-if="!loaded"/>
         <CountdownTimer v-else-if="remainingSeconds != null" :initial-time="remainingSeconds" ref="timer" message="O cadastro para seleção das mesas começará em:" @timerEnd="waitThenCheckIfStarted"/>
-        <v-card v-if="unavailable">
+        <v-card v-if="unavailable" max-width="500">
             <v-card-title class="keep-words">Parece que o sistema ainda não está disponível, tente novamente mais tarde.</v-card-title>
         </v-card>
     </v-container>

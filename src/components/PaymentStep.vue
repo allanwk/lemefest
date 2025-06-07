@@ -1,7 +1,7 @@
 <template>
-    <v-container fluid fill-height>
+    <v-container fluid fill-height class="d-flex justify-center">
         <FullscreenLoader v-if="!loaded"/>
-        <v-card v-else>
+        <v-card v-else max-width="500">
             <v-card-title>
                 <v-row justify="center" align="center">
                     <v-col class="keep-words" v-if="payment_value != null">

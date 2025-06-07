@@ -1,47 +1,47 @@
 <template>
-    <v-container fill-height fluid class="d-flex align-center" style="justify-content: space-around">
+    <v-container fill-height fluid class="d-flex align-center justify-center" style="justify-content: space-around">
         <FullscreenLoader v-if="!loaded" />
-        <div style="width: 100%">
-        <v-card style="width: 100%" class="mt-n10">
-            <v-card-title>
-                {{ cardTitle }}
-            </v-card-title>
-            <v-card-text>
-                <v-form ref='form' lazy-validation @submit.prevent="handleSubmit">
-                    <template v-if="isStudentStep">
-                        <p>Para cada aluno identificado, você poderá comprar até 2 mesas</p>
-                        <v-row align="center" justify="center">
-                            <v-col>
-                                <v-text-field label="RM do aluno" required
-                                :rules="validationEnabled ? [rules.required] : []" v-model="studentCode"
-                                clearable v-mask="'###########'" inputmode="numeric" pattern="[0-9]*"></v-text-field>
-                            </v-col>
-                            <v-col cols="5">
-                                <v-btn color="primary" outlined @click='checkStudent' :loading="loadingAddStudent">Adicionar</v-btn>
-                            </v-col>
-                        </v-row>
-                        <v-divider></v-divider>
-                        <p class="mt-4">{{ informedStudentsText }}</p>
-                    </template>
-                    <template v-else>
-                        <p>Por favor preencha corretamente. Precisamos desses dados para processar o pagamento via PIX.</p>
-                        <v-text-field label="Nome Completo" required :rules="validationEnabled ? [rules.required] : []"
-                            v-model="name" clearable></v-text-field>
-                        <v-text-field label="CPF" required :rules="validationEnabled ? [rules.required, isValidCPF] : []"
-                            v-model="identification" clearable v-mask="'###.###.###-##'" inputmode="numeric" pattern="[0-9]*"></v-text-field>
-                        <v-text-field label="Email" type="email" required
-                            :rules="validationEnabled ? [rules.required, rules.validEmail] : []" v-model="email"
-                            clearable autocapitalize="off" style="text-transform: none" @keypress.enter.prevent="handleSubmit"></v-text-field>
-                    </template>
-                </v-form>
-            </v-card-text>
-            <v-card-actions>
-                <v-spacer />
-                <v-btn @click="startClearAction" color="accent">Limpar</v-btn>
-                <v-btn v-if="!isStudentStep" @click="handleAction" color="primary">Salvar</v-btn>
-                <v-btn v-else :disabled="isStudentStep && !students.length" @click="handleAction" :loading="handleNextLoading" color="primary">Próximo</v-btn>
-            </v-card-actions>
-        </v-card>
+        <div style="width: 100%" class="d-flex align-center justify-center">
+            <v-card style="width: 100%" class="mt-n10" max-width="500">
+                <v-card-title>
+                    {{ cardTitle }}
+                </v-card-title>
+                <v-card-text>
+                    <v-form ref='form' lazy-validation @submit.prevent="handleSubmit">
+                        <template v-if="isStudentStep">
+                            <p>Para cada aluno identificado, você poderá comprar até 2 mesas</p>
+                            <v-row align="center" justify="center">
+                                <v-col>
+                                    <v-text-field label="RM do aluno" required
+                                    :rules="validationEnabled ? [rules.required] : []" v-model="studentCode"
+                                    clearable v-mask="'###########'" inputmode="numeric" pattern="[0-9]*"></v-text-field>
+                                </v-col>
+                                <v-col cols="5">
+                                    <v-btn color="primary" outlined @click='checkStudent' :loading="loadingAddStudent">Adicionar</v-btn>
+                                </v-col>
+                            </v-row>
+                            <v-divider></v-divider>
+                            <p class="mt-4">{{ informedStudentsText }}</p>
+                        </template>
+                        <template v-else>
+                            <p>Por favor preencha corretamente. Precisamos desses dados para processar o pagamento via PIX.</p>
+                            <v-text-field label="Nome Completo" required :rules="validationEnabled ? [rules.required] : []"
+                                v-model="name" clearable></v-text-field>
+                            <v-text-field label="CPF" required :rules="validationEnabled ? [rules.required, isValidCPF] : []"
+                                v-model="identification" clearable v-mask="'###.###.###-##'" inputmode="numeric" pattern="[0-9]*"></v-text-field>
+                            <v-text-field label="Email" type="email" required
+                                :rules="validationEnabled ? [rules.required, rules.validEmail] : []" v-model="email"
+                                clearable autocapitalize="off" style="text-transform: none" @keypress.enter.prevent="handleSubmit"></v-text-field>
+                        </template>
+                    </v-form>
+                </v-card-text>
+                <v-card-actions>
+                    <v-spacer />
+                    <v-btn @click="startClearAction" color="accent">Limpar</v-btn>
+                    <v-btn v-if="!isStudentStep" @click="handleAction" color="primary">Salvar</v-btn>
+                    <v-btn v-else :disabled="isStudentStep && !students.length" @click="handleAction" :loading="handleNextLoading" color="primary">Próximo</v-btn>
+                </v-card-actions>
+            </v-card>
         </div>
         <v-dialog v-model="dataConfirmationDialog">
             <v-card>

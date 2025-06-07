@@ -1,6 +1,6 @@
 <template>
-    <v-container fluid fill-height>
-        <v-card style="width:100%">
+    <v-container fluid fill-height class="d-flex justify-center">
+        <v-card style="width:100%" max-width="500">
             <v-card-title>
                 Tempo expirado!
             </v-card-title>

@@ -1,7 +1,7 @@
 <template>
-    <v-container fluid fill-height>
+    <v-container fluid fill-height class="d-flex justify-center">
         <FullscreenLoader v-if="!bookedResources.length" />
-        <v-card style="width:100%">
+        <v-card style="width:100%" max-width="500">
             <v-card-title>
                 Compra finalizada
             </v-card-title>
