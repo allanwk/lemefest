@@ -274,7 +274,7 @@ export default {
                 });
             } catch (e) {
                 console.error(e);
-                this.$toasted.error("Não foi possível solicitar os recursos", { position: 'top-center' });
+                this.$toasted.error("Não foi possível solicitar os recursos. Por favor tente novamente em instantes.", { position: 'top-center' });
                 return;
             } finally {
                 this.buttonLoading = false;
