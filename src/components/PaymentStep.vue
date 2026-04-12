@@ -19,9 +19,10 @@
                 <v-divider class="mb-1"/>
                 <div class="mb-2">Ou use o código abaixo:</div>
                 <v-text-field id="textToCopy" readonly :value="qr_code" append-icon="mdi-content-copy" @click:append="copyCode"/>
-                <v-row align="center" justify="center">
-                    <v-col cols="12" style="display: grid; place-items: center;">
-                        <v-btn color="primary" @click="copyCode">Copiar código</v-btn>
+                <v-row align="center">
+                    <v-col style="display: flex; gap: 10px">
+                        <v-btn color="error" @click="cancelDialog = true" style="flex: 1">Cancelar</v-btn>
+                        <v-btn color="primary" @click="copyCode" style="flex: 1">Copiar código</v-btn>
                     </v-col>
                 </v-row>
                 <v-row>
@@ -31,6 +32,16 @@
                 </v-row>
             </v-card-text>
         </v-card>
+        <v-dialog v-model="cancelDialog" max-width="400">
+            <v-card>
+                <v-card-title>Atenção</v-card-title>
+                <v-card-text>Tem certeza que deseja cancelar? As mesas não serão reservadas. Para comprar novas mesas, será necessário entrar na fila novamente.</v-card-text>
+                <v-card-actions style="flex-wrap: wrap; gap: 5px">
+                    <v-btn @click="cancelDialog = false" style="width: 100%; margin: 0 !important">Continuar pagamento</v-btn>
+                    <v-btn color="error" @click="cancelSelection" :loading="cancelLoading" style="width: 100%; margin: 0 !important">Cancelar compra</v-btn>
+                </v-card-actions>
+            </v-card>
+        </v-dialog>
     </v-container>
 </template>
 
@@ -53,6 +64,8 @@
                 remainingSeconds: null,
                 shownAlert: false,
                 loaded: false,
+                cancelDialog: false,
+                cancelLoading: false,
                 timeout: null,
             }
         },
@@ -103,6 +116,11 @@
                     return;
                 }
                 const user = response.data.usuario;
+                if (parseInt(user.id_etapa) === 7) {
+                    this.stopPolling();
+                    this.$emit('cancelled');
+                    return;
+                }
                 if (user.id_etapa === 4) {
                     this.stopPolling();
                     this.$emit('next');
@@ -150,6 +168,20 @@
             atTimerEnd: function () {
                 this.stopPolling();
                 this.timeout = window.setTimeout(this.getState, 1000);
+            },
+            cancelSelection: async function () {
+                this.cancelLoading = true;
+                try {
+                    await this.$axios.post('/user/cancel');
+                    this.stopPolling();
+                    this.$emit('cancelled');
+                } catch (e) {
+                    console.error(e);
+                    this.$toasted.error("Não foi possível cancelar. Por favor tente novamente.", { position: 'top-center' });
+                } finally {
+                    this.cancelLoading = false;
+                    this.cancelDialog = false;
+                }
             }
         }
     }

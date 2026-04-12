@@ -18,10 +18,11 @@
     <v-main class="background">
       <StartWaiting v-if="step === steps.START_WAITING" @next="step = steps.REGISTER"/>
       <StartForm v-if='step === steps.REGISTER' @gotoStep='handleGotoStep' @next="step = steps.QUEUE" :fromRestart="restart"/>
-      <ResourceList v-if='[steps.QUEUE, steps.SELECTION].includes(step)' @next="step = steps.PAYMENT" @timeExpired="step = steps.SELECTION_EXPIRED"/>
-      <PaymentStep v-if='step === steps.PAYMENT' @next="step = steps.PAID" @timeExpired="step = steps.PAYMENT_EXPIRED"/>
+      <ResourceList v-if='[steps.QUEUE, steps.SELECTION].includes(step)' @next="step = steps.PAYMENT" @timeExpired="step = steps.SELECTION_EXPIRED" @cancelled="step = steps.CANCELLED"/>
+      <PaymentStep v-if='step === steps.PAYMENT' @next="step = steps.PAID" @timeExpired="step = steps.PAYMENT_EXPIRED" @cancelled="step = steps.CANCELLED"/>
       <PurchaseFinished v-if='step === steps.PAID' @restart="handleRestart"/>
       <TimeExpired v-if='[steps.PAYMENT_EXPIRED, steps.SELECTION_EXPIRED].includes(step)' :step="step" @restart="handleRestart"/>
+      <SelectionCancelled v-if='step === steps.CANCELLED' @restart="handleRestart"/>
     </v-main>
   </v-app>
 </template>
@@ -33,6 +34,7 @@ import ResourceList from './components/ResourceList';
 import PaymentStep from './components/PaymentStep';
 import PurchaseFinished from './components/PurchaseFinished';
 import TimeExpired from './components/TimeExpired';
+import SelectionCancelled from './components/SelectionCancelled';
 
 export default {
   name: 'App',
@@ -43,7 +45,8 @@ export default {
     ResourceList,
     PaymentStep,
     PurchaseFinished,
-    TimeExpired
+    TimeExpired,
+    SelectionCancelled
   },
 
   data: () => ({
@@ -56,6 +59,7 @@ export default {
       PAID: 4,
       SELECTION_EXPIRED: 5,
       PAYMENT_EXPIRED: 6,
+      CANCELLED: 7,
     },
     step: -1,
     restart: false,

@@ -66,14 +66,30 @@
                     </v-card-actions>
                 </v-card>
             </v-dialog>
-            <v-footer color="primary" app style="justify-content: end; gap: 5px">
+            <v-dialog v-model="cancelDialog" max-width="400">
+                <v-card>
+                    <v-card-title>Atenção</v-card-title>
+                    <v-card-text>{{ cancelDescription }} Caso decida comprar novas mesas, será necessário entrar na fila novamente.</v-card-text>
+                    <v-card-actions style="flex-wrap: wrap; gap: 5px">
+                        <v-btn @click="cancelDialog = false" style="width: 100%; margin: 0 !important"> {{ cancelNegativevButtonDescriptionDescription }}</v-btn>
+                        <v-btn color="error" @click="cancelSelection" :loading="cancelLoading" style="width: 100%; margin: 0 !important">Sair da fila</v-btn>
+                    </v-card-actions>
+                </v-card>
+            </v-dialog>
+            <v-footer color="primary" app class="app-footer">
                 <template v-if="step === steps.SELECTION">
-                    <span style="color:background">{{ totalPriceLabel }}</span>
-                    <v-spacer />
-                    <v-btn color='background' @click="informationDialog = true">Ajuda</v-btn>
-                    <v-btn color='background' @click="requestPickedResources" :loading="buttonLoading">{{ buyButtonLabel }}</v-btn>
+                    <div class="footer-top-row">
+                        <span style="color:background">{{ totalPriceLabel }}</span>
+                        <v-spacer/>
+                        <v-btn color='background' @click="informationDialog = true">Ajuda</v-btn>
+                    </div>
+                    <v-btn color='error' class="footer-btn" @click="cancelDialog = true"> {{ cancelLabel }}</v-btn>
+                    <v-btn color='background' class="footer-btn" @click="requestPickedResources" :loading="buttonLoading">{{ buyButtonLabel }}</v-btn>
                 </template>
-                <v-btn v-else color='background' @click="informationDialog = true">Ajuda</v-btn>
+                <template v-else>
+                    <v-btn color='background' class="footer-btn" @click="informationDialog = true">Ajuda</v-btn>
+                    <v-btn color='error' class="footer-btn" @click="cancelDialog = true"> {{ cancelLabel }}</v-btn>
+                </template>
             </v-footer>
         </template>
     </v-container>
@@ -103,6 +119,7 @@ export default {
                 PAYMENT: 3,
                 PAID: 4,
                 SELECTION_EXPIRED: 5,
+                CANCELLED: 7,
             },
             resources: [],
             unavailableResources: [],
@@ -115,6 +132,8 @@ export default {
             remainingSeconds: null,
             informationDialog: true,
             shownAlert: false,
+            cancelDialog: false,
+            cancelLoading: false,
             queuePosition: null,
             pollingInterval: 60000,
             pollingIntervals: {
@@ -191,7 +210,25 @@ export default {
         },
         pistaLimitReached: function () {
             return (this.getMyBookedResourcesPista.length + this.getMySelectedResourceIdsPista.length) >= this.limitePista;
-        }
+        },
+        cancelLabel: function () {
+            if (this.step === this.steps.QUEUE) {
+                return "Sair da fila";
+            }
+            return "Cancelar";
+        },
+        cancelDescription: function () {
+            if (this.step === this.steps.QUEUE) {
+                return "Tem certeza que deseja sair da fila?";
+            }
+            return "Tem certeza que deseja cancelar a seleção de mesas?";
+        },
+        cancelNegativevButtonDescriptionDescription: function () {
+            if (this.step === this.steps.QUEUE) {
+                return "Continuar na fila";
+            }
+            return "Continuar escolhendo mesas";
+        },
     },
     methods: {
         startPolling: function () {
@@ -230,6 +267,11 @@ export default {
             }
 
             const user = response.data.usuario;
+            if (parseInt(user.id_etapa) === 7) {
+                this.stopPollingState();
+                this.$emit('cancelled');
+                return;
+            }
             if (parseInt(user.segundos_restantes_selecao) < 0) {
                 this.stopPollingState();
                 this.$emit('timeExpired');
@@ -331,6 +373,20 @@ export default {
         atTimerEnd: function () {
             this.stopPollingState();
             this.timeout = window.setTimeout(this.getState, 1000);
+        },
+        cancelSelection: async function () {
+            this.cancelLoading = true;
+            try {
+                await this.$axios.post('/user/cancel');
+                this.stopPollingState();
+                this.$emit('cancelled');
+            } catch (e) {
+                console.error(e);
+                this.$toasted.error("Não foi possível cancelar. Por favor tente novamente.", { position: 'top-center' });
+            } finally {
+                this.cancelLoading = false;
+                this.cancelDialog = false;
+            }
         }
     }
 }
@@ -369,5 +425,26 @@ export default {
     word-wrap: break-word;
     overflow-wrap: break-word;
     word-break: keep-all;
+}
+
+.app-footer {
+    justify-content: flex-end;
+    gap: 5px;
+    flex-wrap: wrap;
+}
+
+.footer-top-row {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+@media (max-width: 600px) {
+    .footer-btn {
+        flex: 1;
+    }
+    .footer-top-row {
+        width: 100%;
+    }
 }
 </style>
