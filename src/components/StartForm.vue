@@ -44,7 +44,7 @@
                 </v-card-actions>
             </v-card>
         </div>
-        <v-dialog v-model="dataConfirmationDialog">
+        <v-dialog v-model="dataConfirmationDialog" max-width="400">
             <v-card>
                 <v-card-title>Os dados estão corretos?</v-card-title>
                 <v-card-text>
@@ -60,7 +60,7 @@
                 </v-card-actions>
             </v-card>
         </v-dialog>
-        <v-dialog v-model="dialog">
+        <v-dialog v-model="dialog" max-width="400">
             <v-card>
                 <v-card-title>
                     Aluno encontrado
@@ -75,7 +75,7 @@
                 </v-card-actions>
             </v-card>
         </v-dialog>
-        <v-dialog v-model="confirmationDialog">
+        <v-dialog v-model="confirmationDialog" max-width="400">
             <v-card>
                 <v-card-title>Confirmação</v-card-title>
                 <v-card-text>
@@ -89,7 +89,7 @@
                 </v-card-actions>
             </v-card>
         </v-dialog>
-        <v-dialog v-model="exchangeOnlyDialog">
+        <v-dialog v-model="exchangeOnlyDialog" max-width="400">
             <v-card>
                 <v-card-title class="keep-words">Atenção!</v-card-title>
                 <v-card-text>
@@ -104,7 +104,7 @@
                 </v-card-actions>
             </v-card>
         </v-dialog>
-        <v-dialog v-model="exitConfirmationDialog">
+        <v-dialog v-model="exitConfirmationDialog" max-width="400">
             <v-card>
                 <v-card-title>Confirmação</v-card-title>
                 <v-card-text>
@@ -117,7 +117,7 @@
                 </v-card-actions>
             </v-card>
         </v-dialog>
-        <v-dialog v-model="clearConfirmationDialog">
+        <v-dialog v-model="clearConfirmationDialog" max-width="400">
             <v-card>
                 <v-card-title>Confirmação</v-card-title>
                 <v-card-text>
@@ -131,7 +131,7 @@
                 </v-card-actions>
             </v-card>
         </v-dialog>
-        <v-dialog v-model="errorDialog">
+        <v-dialog v-model="errorDialog" max-width="400">
             <v-card>
                 <v-card-title class="keep-words">{{ errorDialogMessage }}</v-card-title>
                 <v-card-actions>

@@ -47,7 +47,7 @@
                     </div>
                 </v-card-text>
             </v-card>
-            <v-dialog v-model="informationDialog">
+            <v-dialog v-model="informationDialog" max-width="400">
                 <v-card>
                     <v-card-title>
                         Seleção de mesas
