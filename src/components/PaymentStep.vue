@@ -112,7 +112,7 @@
                     response = await this.$axios.post('/state');
                 } catch (e) {
                     console.error(e);
-                    this.$toasted.error("Não foi possível consultar a fila");
+                    // this.$toasted.error("Não foi possível consultar a fila");
                     return;
                 }
                 const user = response.data.usuario;

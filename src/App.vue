@@ -5,7 +5,7 @@
       color="primary"
       dark
     >
-      <v-toolbar-title>Festa Junina Leme 2025</v-toolbar-title>
+      <v-toolbar-title>Festa Junina Leme 2026</v-toolbar-title>
       <v-spacer></v-spacer>
         <v-img
         :src="require('@/assets/colegio.png')"

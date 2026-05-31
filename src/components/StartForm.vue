@@ -37,6 +37,7 @@
                 </v-card-text>
                 <v-card-actions>
                     <v-spacer />
+                    <v-btn v-if="isStudentStep && fromRestart" @click="exitConfirmationDialog = true" color="accent" outlined>Sair</v-btn>
                     <v-btn @click="startClearAction" color="accent">Limpar</v-btn>
                     <v-btn v-if="!isStudentStep" @click="handleAction" color="primary">Salvar</v-btn>
                     <v-btn v-else :disabled="isStudentStep && !students.length" @click="handleAction" :loading="handleNextLoading" color="primary">Entrar na fila</v-btn>
@@ -54,7 +55,7 @@
                 </v-card-text>
                 <v-card-actions>
                     <v-spacer/>
-                    <v-btn outline color="accent" @click="dataConfirmationDialog = false">Voltar</v-btn>
+                    <v-btn outlined color="accent" @click="dataConfirmationDialog = false">Voltar</v-btn>
                     <v-btn color="primary" @click="confirmBasicData">Confirmar</v-btn>
                 </v-card-actions>
             </v-card>
@@ -69,7 +70,7 @@
                 </v-card-text>
                 <v-card-actions>
                     <v-spacer/>
-                    <v-btn outline color="accent" @click="closeStudentDialog">Voltar</v-btn>
+                    <v-btn outlined color="accent" @click="closeStudentDialog">Voltar</v-btn>
                     <v-btn color="primary" @click="confirmStudent">Confirmar</v-btn>
                 </v-card-actions>
             </v-card>
@@ -83,7 +84,7 @@
                 </v-card-text>
                 <v-card-actions>
                     <v-spacer/>
-                    <v-btn outline color="accent" @click="confirmationDialog = false">Voltar</v-btn>
+                    <v-btn outlined color="accent" @click="confirmationDialog = false">Voltar</v-btn>
                     <v-btn color="primary" @click="enterQueue">Confirmar</v-btn>
                 </v-card-actions>
             </v-card>
@@ -98,8 +99,21 @@
                 </v-card-text>
                 <v-card-actions>
                     <v-spacer/>
-                    <v-btn outline color="accent" @click="exchangeOnlyDialog = false">Voltar</v-btn>
+                    <v-btn outlined color="accent" @click="exchangeOnlyDialog = false">Voltar</v-btn>
                     <v-btn color="primary" @click="confirmExchangeOnly">Sim, entrar na fila</v-btn>
+                </v-card-actions>
+            </v-card>
+        </v-dialog>
+        <v-dialog v-model="exitConfirmationDialog">
+            <v-card>
+                <v-card-title>Confirmação</v-card-title>
+                <v-card-text>
+                    <p>Deseja realmente sair? Caso decida comprar mais mesas depois, basta voltar e entrar na fila novamente.</p>
+                </v-card-text>
+                <v-card-actions>
+                    <v-spacer/>
+                    <v-btn outlined color="accent" @click="exitConfirmationDialog = false">Voltar</v-btn>
+                    <v-btn color="primary" @click="reloadPage">Sim, sair</v-btn>
                 </v-card-actions>
             </v-card>
         </v-dialog>
@@ -112,7 +126,7 @@
                 </v-card-text>
                 <v-card-actions>
                     <v-spacer/>
-                    <v-btn outline color="accent" @click="clearConfirmationDialog = false">Voltar</v-btn>
+                    <v-btn outlined color="accent" @click="clearConfirmationDialog = false">Voltar</v-btn>
                     <v-btn color="primary" @click="clear">Sim</v-btn>
                 </v-card-actions>
             </v-card>
@@ -122,7 +136,7 @@
                 <v-card-title class="keep-words">{{ errorDialogMessage }}</v-card-title>
                 <v-card-actions>
                     <v-spacer/>
-                    <v-btn outline color="primary" @click="errorDialog = false">OK</v-btn>
+                    <v-btn outlined color="primary" @click="errorDialog = false">OK</v-btn>
                 </v-card-actions>
             </v-card>
         </v-dialog>
@@ -162,6 +176,7 @@ export default {
             dialog: false,
             confirmationDialog: false,
             clearConfirmationDialog: false,
+            exitConfirmationDialog: false,
             dataConfirmationDialog: false,
             exchangeOnlyDialog: false,
             loadingAddStudent: false,
@@ -447,6 +462,9 @@ export default {
             this.$nextTick(() => {
                 this.errorDialog = true;
             })
+        },
+        reloadPage: function () {
+            window.location.reload();
         }
     }
 }

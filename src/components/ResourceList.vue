@@ -79,12 +79,11 @@
             <v-footer color="primary" app class="app-footer">
                 <template v-if="step === steps.SELECTION">
                     <div class="footer-top-row">
-                        <span style="color:background">{{ totalPriceLabel }}</span>
-                        <v-spacer/>
-                        <v-btn color='background' @click="informationDialog = true">Ajuda</v-btn>
+                        <span v-if="totalPriceLabel" style="color:background">{{ totalPriceLabel }}</span>
+                        <v-btn color='error' class="footer-top-btn" @click="cancelDialog = true">{{ cancelLabel }}</v-btn>
+                        <v-btn color='background' class="footer-top-btn" @click="informationDialog = true">Ajuda</v-btn>
                     </div>
-                    <v-btn color='error' class="footer-btn" @click="cancelDialog = true"> {{ cancelLabel }}</v-btn>
-                    <v-btn color='background' class="footer-btn" @click="requestPickedResources" :loading="buttonLoading">{{ buyButtonLabel }}</v-btn>
+                    <v-btn color='background' class="footer-btn footer-btn-wrap" @click="requestPickedResources" :loading="buttonLoading">{{ buyButtonLabel }}</v-btn>
                 </template>
                 <template v-else>
                     <v-btn color='background' class="footer-btn" @click="informationDialog = true">Ajuda</v-btn>
@@ -224,10 +223,6 @@ export default {
             const swapCount = Math.min(newIds.length, removedCount);
             const extraBuyCount = newIds.length - swapCount;
 
-            if (extraBuyCount === 0) {
-                return null;
-            }
-
             const newValuesDesc = newIds
                 .map(id => Number(this.resources.find(res => res.id_recurso === id).valor))
                 .sort((a, b) => b - a);
@@ -285,7 +280,7 @@ export default {
                 response = await this.$axios.post('/state');
             } catch (e) {
                 console.error(e);
-                this.$toasted.error("Não foi possível consultar a fila");
+                // this.$toasted.error("Não foi possível consultar a fila");
                 return;
             }
 
@@ -472,12 +467,20 @@ export default {
     gap: 5px;
 }
 
+.footer-btn-wrap >>> .v-btn__content {
+    white-space: normal;
+    flex: 1;
+}
+
 @media (max-width: 600px) {
     .footer-btn {
-        flex: 1;
+        flex: 1 1 100%;
     }
     .footer-top-row {
         width: 100%;
+    }
+    .footer-top-btn {
+        flex: 1;
     }
 }
 </style>
