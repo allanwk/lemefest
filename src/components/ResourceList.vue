@@ -172,44 +172,73 @@ export default {
         getMySelectedResourceIds() {
             return this.selected.filter(id => {
                 const resource = this.resources.find(resource => resource.id_recurso === id);
-                return resource.id_status_recurso === 1 || (resource.id_status_recurso !== 4 && resource.solicitado_por_mim === 1)
+                return resource.id_status_recurso === 1 || resource.solicitado_por_mim === 1
             })
         },
         getMyBookedResources() {
-            return this.selected.filter(id => {
-                const resource = this.resources.find(resource => resource.id_recurso === id);
+            return this.resources.filter(resource => {
                 return resource.id_status_recurso === 4 && resource.solicitado_por_mim === 1
             })
         },
         getMySelectedResourceIdsPista() {
-            return this.selected.filter(id => {
+            return this.getMySelectedResourceIds.filter(id => {
                 const resource = this.resources.find(resource => resource.id_recurso === id);
-                return resource.pista && (resource.id_status_recurso === 1 || (resource.id_status_recurso !== 4 && resource.solicitado_por_mim === 1))
-            })
-        },
-        getMyBookedResourcesPista() {
-            return this.selected.filter(id => {
-                const resource = this.resources.find(resource => resource.id_recurso === id);
-                return resource.pista && (resource.id_status_recurso === 4 && resource.solicitado_por_mim === 1)
+                return resource.pista
             })
         },
         buyButtonLabel: function () {
-            if (this.getMySelectedResourceIds.length === 1) {
-                return "Comprar mesa";
-            } else if (this.getMySelectedResourceIds.length > 1) {
-                return `Comprar ${this.getMySelectedResourceIds.length} mesas`;
+            const bookedIds = this.getMyBookedResources.map(r => r.id_recurso);
+            const selectedIds = this.getMySelectedResourceIds;
+            const newIds = selectedIds.filter(id => !bookedIds.includes(id));
+            const keptCount = selectedIds.filter(id => bookedIds.includes(id)).length;
+            const removedCount = bookedIds.length - keptCount;
+            const newCount = newIds.length;
+
+            const pluralize = (n) => n === 1 ? "mesa" : "mesas";
+
+            if (bookedIds.length === 0) {
+                if (selectedIds.length >= 1) return `Comprar ${selectedIds.length} ${pluralize(selectedIds.length)}`;
+                return "Comprar mesas";
+            }
+
+            const swapCount = Math.min(newCount, removedCount);
+            const extraBuyCount = newCount - swapCount;
+
+            if (swapCount > 0 && extraBuyCount > 0) {
+                return `Trocar ${swapCount} ${pluralize(swapCount)} e comprar ${extraBuyCount} ${pluralize(extraBuyCount)}`;
+            }
+            if (swapCount > 0) {
+                return `Trocar ${swapCount} ${pluralize(swapCount)}`;
+            }
+            if (extraBuyCount > 0) {
+                return `Comprar ${extraBuyCount} ${pluralize(extraBuyCount)}`;
             }
             return "Comprar mesas";
         },
         totalPriceLabel: function () {
-            const total = this.getMySelectedResourceIds.reduce((acc, resourceId) => { return acc + Number(this.resources.find(res => res.id_recurso === resourceId).valor) }, 0);
+            const bookedIds = this.getMyBookedResources.map(r => r.id_recurso);
+            const selectedIds = this.getMySelectedResourceIds;
+            const newIds = selectedIds.filter(id => !bookedIds.includes(id));
+            const keptCount = selectedIds.filter(id => bookedIds.includes(id)).length;
+            const removedCount = bookedIds.length - keptCount;
+            const swapCount = Math.min(newIds.length, removedCount);
+            const extraBuyCount = newIds.length - swapCount;
+
+            if (extraBuyCount === 0) {
+                return null;
+            }
+
+            const newValuesDesc = newIds
+                .map(id => Number(this.resources.find(res => res.id_recurso === id).valor))
+                .sort((a, b) => b - a);
+            const total = newValuesDesc.slice(0, extraBuyCount).reduce((acc, v) => acc + v, 0);
             return "Total: R$ " + total.toFixed(2);
         },
         resourceLimitReached: function () {
-            return (this.getMyBookedResources.length + this.getMySelectedResourceIds.length) >= this.tableLimit;
+            return this.getMySelectedResourceIds.length >= this.tableLimit;
         },
         pistaLimitReached: function () {
-            return (this.getMyBookedResourcesPista.length + this.getMySelectedResourceIdsPista.length) >= this.limitePista;
+            return this.getMySelectedResourceIdsPista.length >= this.limitePista;
         },
         cancelLabel: function () {
             if (this.step === this.steps.QUEUE) {
@@ -325,6 +354,10 @@ export default {
                 this.$toasted.error("É necessário escolher ao menos uma mesa", { position: 'top-center' });
                 return;
             }
+            if (this.getMySelectedResourceIds.length < this.getMyBookedResources.length) {
+                this.$toasted.error("Não é possível selecionar menos mesas do que você já comprou", { position: 'top-center' });
+                return;
+            }
             this.buttonLoading = true;
             let paymentResponse;
             try {
@@ -342,10 +375,6 @@ export default {
             this.$emit('next', paymentResponse);
         },
         getResourceState: function (item) {
-            if (item.id_status_recurso === 4 && item.solicitado_por_mim) {
-                return 4; //disabled colored
-            }
-
             if (item.id_status_recurso !== 1 && !item.solicitado_por_mim) {
                 return 3; //disabled dark
             }
@@ -356,6 +385,10 @@ export default {
 
             if (((item.pista && this.pistaLimitReached) || this.resourceLimitReached) && this.selected.findIndex(it => it === item.id_recurso) === -1) {
                 return 2; //disabled light
+            }
+            
+            if (item.solicitado_por_mim) {
+                return 4; //diffent color, allows selection
             }
 
             return 0;

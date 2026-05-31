@@ -70,6 +70,9 @@ export default {
       this.step = this.steps[Object.keys(this.steps).find(key => this.steps[key] === stepId)];
     },
     handleRestart: function () {
+      this.$toasted.success('Aqui você pode informar mais RMs de alunos para comprar mais mesas. Com tudo pronto, basta clicar em "Entrar na fila"', {
+        duration: 8000,
+      });
       this.step = this.steps.REGISTER;
       this.restart = true;
     }

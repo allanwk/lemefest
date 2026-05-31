@@ -39,7 +39,7 @@
                     <v-spacer />
                     <v-btn @click="startClearAction" color="accent">Limpar</v-btn>
                     <v-btn v-if="!isStudentStep" @click="handleAction" color="primary">Salvar</v-btn>
-                    <v-btn v-else :disabled="isStudentStep && !students.length" @click="handleAction" :loading="handleNextLoading" color="primary">Próximo</v-btn>
+                    <v-btn v-else :disabled="isStudentStep && !students.length" @click="handleAction" :loading="handleNextLoading" color="primary">Entrar na fila</v-btn>
                 </v-card-actions>
             </v-card>
         </div>
@@ -85,6 +85,21 @@
                     <v-spacer/>
                     <v-btn outline color="accent" @click="confirmationDialog = false">Voltar</v-btn>
                     <v-btn color="primary" @click="enterQueue">Confirmar</v-btn>
+                </v-card-actions>
+            </v-card>
+        </v-dialog>
+        <v-dialog v-model="exchangeOnlyDialog">
+            <v-card>
+                <v-card-title class="keep-words">Atenção!</v-card-title>
+                <v-card-text>
+                    <p>Você já comprou a quantidade máxima de mesas para o número de alunos identificados ({{ maxTables }} mesas).</p>
+                    <p>Você ainda pode entrar na fila para <b>trocar</b> mesas já compradas por outras livres. Não há reembolso automático.</p>
+                    <p>Deseja continuar?</p>
+                </v-card-text>
+                <v-card-actions>
+                    <v-spacer/>
+                    <v-btn outline color="accent" @click="exchangeOnlyDialog = false">Voltar</v-btn>
+                    <v-btn color="primary" @click="confirmExchangeOnly">Sim, entrar na fila</v-btn>
                 </v-card-actions>
             </v-card>
         </v-dialog>
@@ -148,6 +163,7 @@ export default {
             confirmationDialog: false,
             clearConfirmationDialog: false,
             dataConfirmationDialog: false,
+            exchangeOnlyDialog: false,
             loadingAddStudent: false,
             handleNextLoading: false,
             errorDialog: false,
@@ -407,7 +423,8 @@ export default {
 
                 const maxResources = this.students.length * 2;
                 if (bookedResources != null && bookedResources.length >= maxResources) {
-                    return this.$toasted.error("Você já comprou a quantidade máxima de mesas para o número de alunos identificados. Para comprar mais mesas, é necessário informar o código de mais alunos.");
+                    this.exchangeOnlyDialog = true;
+                    return;
                 }
 
                 this.confirmationDialog = true;
@@ -420,6 +437,10 @@ export default {
         confirmBasicData: async function () {
             this.dataConfirmationDialog = false;
             await this.registerUser();
+        },
+        confirmExchangeOnly: function () {
+            this.exchangeOnlyDialog = false;
+            this.enterQueue();
         },
         showError: function (errorMessage) {
             this.errorDialogMessage = errorMessage;
