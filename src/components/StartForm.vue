@@ -227,25 +227,30 @@ export default {
             }
 
             this.uuid = localStorage.getItem("uuid_usuario");
-            if (this.uuid) {
+            const token = localStorage.getItem("token");
+            if (this.uuid && token) {
                 let response;
                 try {
-                    response = await this.$axios.post('/user/get', { uuid_usuario: this.uuid });
+                    response = await this.$axios.post('/user/get', {});
                 } catch (e) {
-                    console.error(e);
-                    this.$toasted.error("Não foi possível consultar o servidor");
-                    return;
+                    if (e.response?.status === 401 || e.response?.status === 403) {
+                        localStorage.removeItem("token");
+                    } else {
+                        console.error(e);
+                        this.$toasted.error("Não foi possível consultar o servidor");
+                        return;
+                    }
                 }
-                if (response.data?.user?.id_etapa) {
+                if (response?.data?.user?.id_etapa) {
                     this.$emit('gotoStep', response.data?.user?.id_etapa);
                     return;
-                } else if (response.data?.user) {
+                } else if (response?.data?.user) {
                     this.isStudentStep = true;
                     this.loaded = true;
                     return;
                 }
             }
-            const uuid = uuidv4();
+            const uuid = this.uuid || uuidv4();
             localStorage.setItem("uuid_usuario", uuid);
             this.uuid = uuid;
             this.loaded = true;
