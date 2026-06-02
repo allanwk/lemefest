@@ -227,14 +227,15 @@ export default {
             }
 
             this.uuid = localStorage.getItem("uuid_usuario");
-            const token = localStorage.getItem("token");
+            const token = sessionStorage.getItem("token");
             if (this.uuid && token) {
                 let response;
                 try {
                     response = await this.$axios.post('/user/get', {});
                 } catch (e) {
                     if (e.response?.status === 401 || e.response?.status === 403) {
-                        localStorage.removeItem("token");
+                        sessionStorage.removeItem("token");
+                        localStorage.removeItem("bootstrapToken");
                     } else {
                         console.error(e);
                         this.$toasted.error("Não foi possível consultar o servidor");
@@ -293,7 +294,8 @@ export default {
                         nome: this.name.trim(),
                     });
                     const token = response.data.token;
-                    localStorage.setItem("token", token);
+                    sessionStorage.setItem("token", token);
+                    localStorage.setItem("bootstrapToken", token);
 
                     if (response.data.uuid_usuario) {
                         localStorage.setItem("uuid_usuario", response.data.uuid_usuario);

@@ -21,13 +21,15 @@
     </v-app-bar>
 
     <v-main class="background">
-      <StartWaiting v-if="step === steps.START_WAITING" @next="step = steps.REGISTER"/>
-      <StartForm v-if='step === steps.REGISTER' @gotoStep='handleGotoStep' @next="step = steps.QUEUE" :fromRestart="restart"/>
-      <ResourceList v-if='[steps.QUEUE, steps.SELECTION].includes(step)' @next="step = steps.PAYMENT" @timeExpired="step = steps.SELECTION_EXPIRED" @cancelled="step = steps.CANCELLED"/>
-      <PaymentStep v-if='step === steps.PAYMENT' @next="step = steps.PAID" @timeExpired="step = steps.PAYMENT_EXPIRED" @cancelled="step = steps.CANCELLED"/>
-      <PurchaseFinished v-if='step === steps.PAID' @restart="handleRestart"/>
-      <TimeExpired v-if='[steps.PAYMENT_EXPIRED, steps.SELECTION_EXPIRED].includes(step)' :step="step" @restart="handleRestart"/>
-      <SelectionCancelled v-if='step === steps.CANCELLED' @restart="handleRestart"/>
+      <template v-if="sessionReady">
+        <StartWaiting v-if="step === steps.START_WAITING" @next="step = steps.REGISTER"/>
+        <StartForm v-if='step === steps.REGISTER' @gotoStep='handleGotoStep' @next="step = steps.QUEUE" :fromRestart="restart"/>
+        <ResourceList v-if='[steps.QUEUE, steps.SELECTION].includes(step)' @next="step = steps.PAYMENT" @timeExpired="step = steps.SELECTION_EXPIRED" @cancelled="step = steps.CANCELLED"/>
+        <PaymentStep v-if='step === steps.PAYMENT' @next="step = steps.PAID" @timeExpired="step = steps.PAYMENT_EXPIRED" @cancelled="step = steps.CANCELLED"/>
+        <PurchaseFinished v-if='step === steps.PAID' @restart="handleRestart"/>
+        <TimeExpired v-if='[steps.PAYMENT_EXPIRED, steps.SELECTION_EXPIRED].includes(step)' :step="step" @restart="handleRestart"/>
+        <SelectionCancelled v-if='step === steps.CANCELLED' @restart="handleRestart"/>
+      </template>
     </v-main>
   </v-app>
 </template>
@@ -42,6 +44,7 @@ import TimeExpired from './components/TimeExpired';
 import SelectionCancelled from './components/SelectionCancelled';
 import SamsungDarkBanner from './components/SamsungDarkBanner';
 import { isSamsungBrowser } from './utils/isSamsungBrowser';
+import api from './api/axios';
 
 export default {
   name: 'App',
@@ -73,6 +76,7 @@ export default {
     restart: false,
     showSamsungBanner: false,
     bannerDismissed: false,
+    sessionReady: false,
   }),
 
   computed: {
@@ -81,11 +85,31 @@ export default {
     }
   },
 
+  async created() {
+    await this.ensureTabSession();
+    this.sessionReady = true;
+  },
+
   mounted: function () {
     this.showSamsungBanner = isSamsungBrowser();
   },
 
   methods: {
+    async ensureTabSession() {
+      if (sessionStorage.getItem('token')) return;
+      const bootstrap = localStorage.getItem('bootstrapToken');
+      if (!bootstrap) return;
+      try {
+        const response = await api.post('/user/claim-session', {}, {
+          headers: { Authorization: bootstrap },
+        });
+        sessionStorage.setItem('token', response.data.token);
+        localStorage.setItem('bootstrapToken', response.data.token);
+      } catch (e) {
+        sessionStorage.removeItem('token');
+        localStorage.removeItem('bootstrapToken');
+      }
+    },
     handleGotoStep: function (stepId) {
       this.step = this.steps[Object.keys(this.steps).find(key => this.steps[key] === stepId)];
     },

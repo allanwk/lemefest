@@ -19,7 +19,7 @@ const api = axios.create({
 //   });
 
 api.interceptors.request.use(config => {
-  const token = localStorage.getItem('token');
+  const token = sessionStorage.getItem('token');
   if (token) {
     config.headers['Authorization'] = token;
   }
@@ -30,9 +30,10 @@ api.interceptors.response.use(
   response => response,
   error => {
     const status = error.response?.status;
-    const hadToken = !!localStorage.getItem('token');
+    const hadToken = !!sessionStorage.getItem('token');
     if (hadToken && (status === 401 || status === 403)) {
-      localStorage.removeItem('token');
+      sessionStorage.removeItem('token');
+      localStorage.removeItem('bootstrapToken');
       window.location.reload();
     }
     return Promise.reject(error);
