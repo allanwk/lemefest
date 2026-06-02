@@ -4,6 +4,7 @@
       app
       color="primary"
       dark
+      :extension-height="samsungBannerVisible ? 72 : undefined"
     >
       <v-toolbar-title>Festa Junina Leme 2026</v-toolbar-title>
       <v-spacer></v-spacer>
@@ -13,10 +14,13 @@
         height="40"
         max-width="40"
       ></v-img>
+
+      <template v-if="samsungBannerVisible" v-slot:extension>
+        <SamsungDarkBanner @close="bannerDismissed = true" />
+      </template>
     </v-app-bar>
 
     <v-main class="background">
-      <SamsungDarkBanner />
       <StartWaiting v-if="step === steps.START_WAITING" @next="step = steps.REGISTER"/>
       <StartForm v-if='step === steps.REGISTER' @gotoStep='handleGotoStep' @next="step = steps.QUEUE" :fromRestart="restart"/>
       <ResourceList v-if='[steps.QUEUE, steps.SELECTION].includes(step)' @next="step = steps.PAYMENT" @timeExpired="step = steps.SELECTION_EXPIRED" @cancelled="step = steps.CANCELLED"/>
@@ -37,6 +41,7 @@ import PurchaseFinished from './components/PurchaseFinished';
 import TimeExpired from './components/TimeExpired';
 import SelectionCancelled from './components/SelectionCancelled';
 import SamsungDarkBanner from './components/SamsungDarkBanner';
+import { isSamsungBrowser } from './utils/isSamsungBrowser';
 
 export default {
   name: 'App',
@@ -66,7 +71,19 @@ export default {
     },
     step: -1,
     restart: false,
+    showSamsungBanner: false,
+    bannerDismissed: false,
   }),
+
+  computed: {
+    samsungBannerVisible: function () {
+      return this.showSamsungBanner && !this.bannerDismissed;
+    }
+  },
+
+  mounted: function () {
+    this.showSamsungBanner = isSamsungBrowser();
+  },
 
   methods: {
     handleGotoStep: function (stepId) {
@@ -82,3 +99,9 @@ export default {
   }
 };
 </script>
+
+<style scoped>
+.v-app-bar >>> .v-toolbar__extension {
+  padding: 0;
+}
+</style>
