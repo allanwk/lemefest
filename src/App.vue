@@ -16,6 +16,7 @@
     </v-app-bar>
 
     <v-main class="background">
+      <SamsungDarkBanner />
       <StartWaiting v-if="step === steps.START_WAITING" @next="step = steps.REGISTER"/>
       <StartForm v-if='step === steps.REGISTER' @gotoStep='handleGotoStep' @next="step = steps.QUEUE" :fromRestart="restart"/>
       <ResourceList v-if='[steps.QUEUE, steps.SELECTION].includes(step)' @next="step = steps.PAYMENT" @timeExpired="step = steps.SELECTION_EXPIRED" @cancelled="step = steps.CANCELLED"/>
@@ -35,6 +36,7 @@ import PaymentStep from './components/PaymentStep';
 import PurchaseFinished from './components/PurchaseFinished';
 import TimeExpired from './components/TimeExpired';
 import SelectionCancelled from './components/SelectionCancelled';
+import SamsungDarkBanner from './components/SamsungDarkBanner';
 
 export default {
   name: 'App',
@@ -46,7 +48,8 @@ export default {
     PaymentStep,
     PurchaseFinished,
     TimeExpired,
-    SelectionCancelled
+    SelectionCancelled,
+    SamsungDarkBanner
   },
 
   data: () => ({
