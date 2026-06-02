@@ -295,6 +295,18 @@ export default {
                     const token = response.data.token;
                     localStorage.setItem("token", token);
 
+                    if (response.data.uuid_usuario) {
+                        localStorage.setItem("uuid_usuario", response.data.uuid_usuario);
+                        this.uuid = response.data.uuid_usuario;
+                    }
+
+                    if (response.data.login) {
+                        this.$toasted.success('Bem-vindo de volta!');
+                        this.validationEnabled = false;
+                        await this.load();
+                        return;
+                    }
+
                     this.$toasted.success('Usuário cadastrado');
 
                     this.isStudentStep = true;
