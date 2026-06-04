@@ -9,7 +9,8 @@
                 <v-card-text>
                     <v-form ref='form' lazy-validation @submit.prevent="handleSubmit">
                         <template v-if="isStudentStep">
-                            <p>Para cada aluno identificado, você poderá comprar até 2 mesas</p>
+                            <p v-if="mesasBase > 0">Você poderá comprar até {{ mesasBase }} mesas, e mais 2 mesas para cada aluno identificado.</p>
+                            <p v-else>Para cada aluno identificado, você poderá comprar até 2 mesas</p>
                             <v-row align="center" justify="center">
                                 <v-col>
                                     <v-text-field label="RM do aluno" required
@@ -40,7 +41,7 @@
                     <v-btn v-if="isStudentStep && fromRestart" @click="exitConfirmationDialog = true" color="accent" outlined>Sair</v-btn>
                     <v-btn @click="startClearAction" color="accent">Limpar</v-btn>
                     <v-btn v-if="!isStudentStep" @click="handleAction" color="primary">Salvar</v-btn>
-                    <v-btn v-else :disabled="isStudentStep && !students.length" @click="handleAction" :loading="handleNextLoading" color="primary">Entrar na fila</v-btn>
+                    <v-btn v-else :disabled="isStudentStep && !students.length && mesasBase === 0" @click="handleAction" :loading="handleNextLoading" color="primary">Entrar na fila</v-btn>
                 </v-card-actions>
             </v-card>
         </div>
@@ -169,6 +170,7 @@ export default {
             validationEnabled: false,
             isStudentStep: false,
             students: [],
+            mesasBase: 0,
             studentCode: null,
             foundStudentName: null,
             foundStudentId: null,
@@ -201,6 +203,9 @@ export default {
         },
         informedStudentsText: function () {
             if (!this.students.length) {
+                if (this.mesasBase > 0) {
+                    return "Você ainda não informou alunos. Você poderá comprar até " + this.mesasBase + " mesas.";
+                }
                 return "Identifique ao menos um aluno para continuar.";
             }
             if (this.students.length === 1) {
@@ -209,11 +214,12 @@ export default {
             return "Você informou o RM dos alunos " + this.students.map(student => `"${student.name}"`).join(', ') + ".";
         },
         maxTables: function () {
-            return this.students.length * 2;
+            return this.mesasBase + this.students.length * 2;
         },
     },
     methods: {
         load: async function () {
+            await this.loadMesasBase();
             if (this.fromRestart) {
                 try {
                     await this.loadLinkedStudents();
@@ -437,6 +443,14 @@ export default {
                 this.$toasted.success("Aluno adicionado!");
             })
         },
+        loadMesasBase: async function () {
+            try {
+                const response = await this.$axios.post('/state/getStarted');
+                this.mesasBase = parseInt(response.data?.quantidade_mesas_base ?? 0, 10);
+            } catch (e) {
+                this.mesasBase = 0;
+            }
+        },
         loadLinkedStudents: async function () {
             const response = await this.$axios.post('/student/linked');
             if (response.data?.alunos) {
@@ -455,7 +469,7 @@ export default {
                 const response = await this.$axios.post('/resource/booked');
                 const bookedResources = response.data?.recursos;
 
-                const maxResources = this.students.length * 2;
+                const maxResources = this.mesasBase + this.students.length * 2;
                 if (bookedResources != null && bookedResources.length >= maxResources) {
                     this.exchangeOnlyDialog = true;
                     return;
