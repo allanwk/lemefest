@@ -80,7 +80,7 @@
             <v-card>
                 <v-card-title>Confirmação</v-card-title>
                 <v-card-text>
-                    <p>{{ informedStudentsText }} Portanto você poderá escolher até <b style="color:#000084">{{ maxTables }} mesas</b> (considerando também mesas que já tenha comprado em passos anteriores).</p>
+                    <p>{{ informedStudentsText }} Portanto você poderá escolher até <b style="color:#000084">{{ maxTables }} mesas</b><span v-if="maxPistaTables > 0">, sendo até <b style="color:#000084">{{ maxPistaTables }} {{ maxPistaTables === 1 ? 'mesa' : 'mesas' }} de pista</b></span> (considerando também mesas que já tenha comprado em passos anteriores).</p>
                     <p>Aviso: após confirmar, não será possível voltar.</p>
                 </v-card-text>
                 <v-card-actions>
@@ -215,6 +215,9 @@ export default {
         },
         maxTables: function () {
             return this.mesasBase + this.students.length * 2;
+        },
+        maxPistaTables: function () {
+            return this.students.length;
         },
     },
     methods: {
