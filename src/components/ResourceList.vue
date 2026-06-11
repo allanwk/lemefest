@@ -3,7 +3,7 @@
         <FullscreenLoader v-if="!loaded"/>
         <template v-else>
             <v-card style="width:100%">
-                <v-card-title class="py-1">
+                <v-card-title class="py-1 queue-status-sticky" :style="stickyTopStyle">
                     <v-row justify="center" align="center">
                         <v-col v-if="step === steps.SELECTION && remainingSeconds != null">
                             <countdown-timer :initial-time="remainingSeconds" ref="timer" message="Tempo para escolher: " @timerEnd="atTimerEnd"/>
@@ -162,6 +162,9 @@ export default {
         }
     },
     computed: {
+        stickyTopStyle: function () {
+            return { top: this.$vuetify.application.top + 'px' };
+        },
         getTitle: function () {
             if (this.step === this.steps.QUEUE) {
                 if (this.queuePosition <= 2) {
@@ -474,6 +477,12 @@ export default {
     word-wrap: break-word;
     overflow-wrap: break-word;
     word-break: keep-all;
+}
+
+.queue-status-sticky {
+    position: sticky;
+    z-index: 4;
+    background-color: #fff;
 }
 
 .app-footer {

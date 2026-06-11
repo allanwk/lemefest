@@ -16,7 +16,7 @@
       ></v-img>
 
       <template v-if="samsungBannerVisible" v-slot:extension>
-        <SamsungDarkBanner @close="bannerDismissed = true" />
+        <SamsungDarkBanner @close="dismissBanner" />
       </template>
     </v-app-bar>
 
@@ -75,7 +75,7 @@ export default {
     step: -1,
     restart: false,
     showSamsungBanner: false,
-    bannerDismissed: false,
+    bannerDismissed: localStorage.getItem('samsungBannerDismissed') === 'true',
     sessionReady: false,
   }),
 
@@ -95,6 +95,11 @@ export default {
   },
 
   methods: {
+    dismissBanner() {
+      this.bannerDismissed = true;
+      localStorage.setItem('samsungBannerDismissed', 'true');
+    },
+
     async ensureTabSession() {
       if (sessionStorage.getItem('token')) return;
       const bootstrap = localStorage.getItem('bootstrapToken');
