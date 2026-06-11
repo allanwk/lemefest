@@ -59,7 +59,7 @@
             <v-dialog v-model="informationDialog" max-width="400">
                 <v-card>
                     <v-card-title>
-                        Seleção de mesas
+                        Ajuda
                     </v-card-title>
                     <v-card-text>
                         <ul>
