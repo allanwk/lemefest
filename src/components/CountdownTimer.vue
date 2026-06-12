@@ -53,6 +53,7 @@
     data() {
       return {
         remainingTime: this.initialTime,
+        targetTime: null,
         timer: null,
         isRunning: false
       }
@@ -79,11 +80,13 @@
       }
     },
     mounted() {
+      document.addEventListener('visibilitychange', this.onVisibilityChange)
       if (this.autoStart) {
         this.startTimer()
       }
     },
     beforeDestroy() {
+      document.removeEventListener('visibilitychange', this.onVisibilityChange)
       this.clearTimer()
     },
     methods: {
@@ -91,18 +94,30 @@
         this.clearTimer()
         if (this.remainingTime > 0) {
           this.isRunning = true
-          this.timer = setInterval(() => {
-            this.remainingTime -= 1
-            
-            if (this.remainingTime <= 0) {
-              this.remainingTime = 0
-              this.clearTimer()
-              this.$emit('timerEnd')
-            }
-          }, 1000)
+          this.targetTime = Date.now() + this.remainingTime * 1000
+          this.timer = setInterval(this.updateRemainingTime, 1000)
+        }
+      },
+      updateRemainingTime() {
+        this.remainingTime = Math.max(0, Math.ceil((this.targetTime - Date.now()) / 1000))
+
+        if (this.remainingTime <= 0) {
+          this.clearTimer()
+          this.isRunning = false
+          this.targetTime = null
+          this.$emit('timerEnd')
+        }
+      },
+      onVisibilityChange() {
+        if (document.visibilityState === 'visible' && this.isRunning && this.targetTime != null) {
+          this.updateRemainingTime()
         }
       },
       pauseTimer() {
+        if (this.isRunning && this.targetTime != null) {
+          this.remainingTime = Math.max(0, Math.ceil((this.targetTime - Date.now()) / 1000))
+        }
+        this.targetTime = null
         this.clearTimer()
         this.isRunning = false
       },
@@ -126,7 +141,9 @@
       },
       addTime(seconds) {
         this.remainingTime += seconds
-        if (!this.isRunning && this.remainingTime > 0) {
+        if (this.isRunning && this.targetTime != null) {
+          this.targetTime += seconds * 1000
+        } else if (this.remainingTime > 0) {
           this.startTimer()
         }
       },

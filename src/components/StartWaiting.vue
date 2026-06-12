@@ -26,10 +26,15 @@
                 retried: false,
                 unavailable: false,
                 timerEnded: false,
+                lastResyncAt: 0,
             }
         },
         mounted: async function () {
+            document.addEventListener('visibilitychange', this.onVisibilityChange);
             await this.checkIfStarted();
+        },
+        beforeDestroy: function () {
+            document.removeEventListener('visibilitychange', this.onVisibilityChange);
         },
         methods: {
             checkIfStarted: async function () {
@@ -62,6 +67,30 @@
                 this.timerEnded = true;
                 const rand = Math.floor(Math.random() * (500 + 1));
                 window.setTimeout(this.checkIfStarted, rand);
+            },
+            onVisibilityChange: async function () {
+                if (document.visibilityState !== 'visible' || !this.loaded || this.timerEnded) {
+                    return;
+                }
+                if (Date.now() - this.lastResyncAt < 5000) {
+                    return;
+                }
+                this.lastResyncAt = Date.now();
+                try {
+                    const response = await this.$axios.post('/state/getStarted');
+                    if (response.data.segundos_ate_liberacao == null || this.timerEnded || !this.$refs.timer) {
+                        return;
+                    }
+                    const seconds = parseInt(response.data.segundos_ate_liberacao, 10);
+                    if (seconds <= 0) {
+                        this.$emit('next');
+                    } else {
+                        this.$refs.timer.setTime(seconds);
+                        this.$refs.timer.startTimer();
+                    }
+                } catch (e) {
+                    console.log(e);
+                }
             }
         },
     }
