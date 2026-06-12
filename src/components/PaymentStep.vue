@@ -116,12 +116,12 @@
                     return;
                 }
                 const user = response.data.usuario;
-                if (parseInt(user.id_etapa) === 7) {
+                if (parseInt(user.id_etapa, 10) === 7) {
                     this.stopPolling();
                     this.$emit('cancelled');
                     return;
                 }
-                if (user.id_etapa === 4) {
+                if (parseInt(user.id_etapa, 10) === 4) {
                     this.stopPolling();
                     this.$emit('next');
                     return;
@@ -167,7 +167,7 @@
             },
             atTimerEnd: function () {
                 this.stopPolling();
-                this.timeout = window.setTimeout(this.getState, 1000);
+                this.timeout = window.setTimeout(this.startPolling, 1000);
             },
             cancelSelection: async function () {
                 this.cancelLoading = true;

@@ -111,8 +111,13 @@ export default {
         sessionStorage.setItem('token', response.data.token);
         localStorage.setItem('bootstrapToken', response.data.token);
       } catch (e) {
-        sessionStorage.removeItem('token');
-        localStorage.removeItem('bootstrapToken');
+        const status = e.response?.status;
+        if (status === 401 || status === 403) {
+          sessionStorage.removeItem('token');
+          localStorage.removeItem('bootstrapToken');
+        } else {
+          console.error(e);
+        }
       }
     },
     handleGotoStep: function (stepId) {

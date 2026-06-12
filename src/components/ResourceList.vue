@@ -303,12 +303,17 @@ export default {
             }
 
             const user = response.data.usuario;
-            if (parseInt(user.id_etapa) === 7) {
+            if (parseInt(user.id_etapa, 10) === 7) {
                 this.stopPollingState();
                 this.$emit('cancelled');
                 return;
             }
-            if (parseInt(user.segundos_restantes_selecao) < 0) {
+            if (parseInt(user.id_etapa, 10) === 3) {
+                this.stopPollingState();
+                this.$emit('next');
+                return;
+            }
+            if (parseInt(user.segundos_restantes_selecao, 10) < 0) {
                 this.stopPollingState();
                 this.$emit('timeExpired');
                 return;
@@ -370,7 +375,7 @@ export default {
             try {
                 paymentResponse = await this.$axios.post('/resource/request', {
                     resource_ids: this.getMySelectedResourceIds
-                });
+                }, { timeout: 30000 });
             } catch (e) {
                 console.error(e);
                 this.$toasted.error("Não foi possível solicitar os recursos. Por favor tente novamente em instantes.", { position: 'top-center' });
@@ -412,7 +417,7 @@ export default {
         },
         atTimerEnd: function () {
             this.stopPollingState();
-            this.timeout = window.setTimeout(this.getState, 1000);
+            this.timeout = window.setTimeout(this.startPolling, 1000);
         },
         cancelSelection: async function () {
             this.cancelLoading = true;

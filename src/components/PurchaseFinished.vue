@@ -38,6 +38,8 @@
             return {
                 changeTablesDialog: false,
                 bookedResources: [],
+                loadAttempts: 0,
+                loadTimeout: null,
                 headers: [{
                     text: 'Nome',
                     value: 'nome_recurso'
@@ -55,14 +57,27 @@
         mounted: function () {
             this.loadBookedResources();
         },
+        beforeDestroy: function () {
+            if (this.loadTimeout) {
+                window.clearTimeout(this.loadTimeout);
+            }
+        },
         methods: {
             loadBookedResources: async function () {
-                const response = await this.$axios.post('/resource/booked');
-                if (response.data.recursos && response.data.recursos.length) {
-                    this.bookedResources = response.data.recursos;
-                } else {
-                    window.setTimeout(this.loadBookedResources, 1000);
+                try {
+                    const response = await this.$axios.post('/resource/booked');
+                    if (response.data.recursos && response.data.recursos.length) {
+                        this.loadAttempts = 0;
+                        this.bookedResources = response.data.recursos;
+                        return;
+                    }
+                } catch (e) {
+                    console.error(e);
                 }
+
+                const delay = Math.min(1000 * Math.pow(2, this.loadAttempts), 30000);
+                this.loadAttempts += 1;
+                this.loadTimeout = window.setTimeout(this.loadBookedResources, delay);
             },
             buyMore: function () {
                 this.$emit('restart');
