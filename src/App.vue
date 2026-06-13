@@ -6,7 +6,7 @@
       dark
       :extension-height="samsungBannerVisible ? 72 : undefined"
     >
-      <v-toolbar-title>Festa Junina Leme 2026</v-toolbar-title>
+      <v-toolbar-title>{{ isAdmin ? 'Administração' : 'Festa Junina Leme 2026' }}</v-toolbar-title>
       <v-spacer></v-spacer>
         <v-img
         :src="require('@/assets/colegio.png')"
@@ -21,7 +21,8 @@
     </v-app-bar>
 
     <v-main class="background">
-      <template v-if="sessionReady">
+      <Admin v-if="isAdmin"/>
+      <template v-else-if="sessionReady">
         <StartWaiting v-if="step === steps.START_WAITING" @next="step = steps.REGISTER"/>
         <StartForm v-if='step === steps.REGISTER' @gotoStep='handleGotoStep' @next="step = steps.QUEUE" :fromRestart="restart"/>
         <ResourceList v-if='[steps.QUEUE, steps.SELECTION].includes(step)' @next="step = steps.PAYMENT" @timeExpired="step = steps.SELECTION_EXPIRED" @cancelled="step = steps.CANCELLED"/>
@@ -43,6 +44,7 @@ import PurchaseFinished from './components/PurchaseFinished';
 import TimeExpired from './components/TimeExpired';
 import SelectionCancelled from './components/SelectionCancelled';
 import SamsungDarkBanner from './components/SamsungDarkBanner';
+import Admin from './components/Admin';
 import { isSamsungBrowser } from './utils/isSamsungBrowser';
 import api from './api/axios';
 
@@ -57,7 +59,8 @@ export default {
     PurchaseFinished,
     TimeExpired,
     SelectionCancelled,
-    SamsungDarkBanner
+    SamsungDarkBanner,
+    Admin
   },
 
   data: () => ({
@@ -77,6 +80,7 @@ export default {
     showSamsungBanner: false,
     bannerDismissed: localStorage.getItem('samsungBannerDismissed') === 'true',
     sessionReady: false,
+    isAdmin: window.location.hash.startsWith('#/admin'),
   }),
 
   computed: {
@@ -86,6 +90,7 @@ export default {
   },
 
   async created() {
+    if (this.isAdmin) return;
     await this.ensureTabSession();
     this.sessionReady = true;
   },

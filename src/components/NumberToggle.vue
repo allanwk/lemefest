@@ -1,7 +1,7 @@
 <template>
     <div 
       class="numbered-checkbox"
-      :class="{ 'checked': isChecked, 'disabled-cursor': state === 1, 'disabled-light': state === 2, 'disabled-dark': state === 3, 'disabled-color': state === 4 && isChecked }"
+      :class="{ 'checked': isChecked, 'disabled-cursor': state === 1, 'disabled-light': state === 2, 'disabled-dark': state === 3, 'disabled-color': state === 4 && isChecked, 'admin-available': state === 5, 'admin-process': state === 6, 'admin-booked': state === 7, 'admin-swap': state === 8 }"
       @click="toggle"
     >
       <input
@@ -130,6 +130,35 @@
   .numbered-checkbox.disabled-color {
     border-color: #6666B5;
     background-color: #6666B5;
+  }
+
+  .numbered-checkbox.admin-available {
+    border-color: #bdbdbd;
+    background-color: #fff;
+    cursor: default;
+  }
+
+  .numbered-checkbox.admin-process {
+    border-color: #f0a000;
+    background-color: #ffc107;
+    cursor: default;
+  }
+
+  .numbered-checkbox.admin-booked {
+    border-color: #000084;
+    background-color: #000084;
+    cursor: default;
+  }
+
+  .numbered-checkbox.admin-swap {
+    border-color: #8e24aa;
+    background-color: #ab47bc;
+    cursor: default;
+  }
+
+  .numbered-checkbox.admin-booked .checkbox-number,
+  .numbered-checkbox.admin-swap .checkbox-number {
+    color: white;
   }
   
   .checkbox-number {
