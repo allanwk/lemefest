@@ -6,7 +6,7 @@
       dark
       :extension-height="samsungBannerVisible ? 72 : undefined"
     >
-      <v-toolbar-title>{{ isAdmin ? 'Administração' : 'Festa Junina Leme 2026' }}</v-toolbar-title>
+      <v-toolbar-title>{{ appBarTitle }}</v-toolbar-title>
       <v-spacer></v-spacer>
         <v-img
         :src="require('@/assets/colegio.png')"
@@ -22,6 +22,7 @@
 
     <v-main class="background">
       <Admin v-if="isAdmin"/>
+      <FichaFlow v-else-if="isFichas" @exit="exitFichas"/>
       <template v-else-if="sessionReady">
         <StartForm v-if='step === steps.REGISTER' @gotoStep='handleGotoStep' @next="step = steps.QUEUE" :fromRestart="restart"/>
         <ResourceList v-if='[steps.QUEUE, steps.SELECTION].includes(step)' @next="step = steps.PAYMENT" @timeExpired="step = steps.SELECTION_EXPIRED" @cancelled="step = steps.CANCELLED"/>
@@ -31,6 +32,8 @@
         <SelectionCancelled v-if='step === steps.CANCELLED' @restart="handleRestart"/>
       </template>
     </v-main>
+
+    <ServerUnavailable v-if="serverUnavailable" />
   </v-app>
 </template>
 
@@ -43,6 +46,8 @@ import TimeExpired from './components/TimeExpired';
 import SelectionCancelled from './components/SelectionCancelled';
 import SamsungDarkBanner from './components/SamsungDarkBanner';
 import Admin from './components/Admin';
+import FichaFlow from './components/FichaFlow';
+import ServerUnavailable from './components/ServerUnavailable';
 import { isSamsungBrowser } from './utils/isSamsungBrowser';
 import api from './api/axios';
 import stateStream from './api/stateStream';
@@ -58,7 +63,9 @@ export default {
     TimeExpired,
     SelectionCancelled,
     SamsungDarkBanner,
-    Admin
+    Admin,
+    FichaFlow,
+    ServerUnavailable
   },
 
   data: () => ({
@@ -77,22 +84,26 @@ export default {
     showSamsungBanner: false,
     bannerDismissed: localStorage.getItem('samsungBannerDismissed') === 'true',
     sessionReady: false,
+    serverUnavailable: false,
+    retryTimer: null,
     isAdmin: window.location.hash.startsWith('#/admin'),
+    isFichas: window.location.hash.startsWith('#/fichas'),
   }),
 
   computed: {
     samsungBannerVisible: function () {
       return this.showSamsungBanner && !this.bannerDismissed;
+    },
+    appBarTitle: function () {
+      if (this.isAdmin) return 'Administração';
+      if (this.isFichas) return 'Compra de fichas';
+      return 'Festa Junina Leme 2026';
     }
   },
 
   async created() {
-    if (this.isAdmin) return;
-    await this.ensureTabSession();
-    this.sessionReady = true;
-    if (sessionStorage.getItem('token')) {
-      stateStream.connect();
-    }
+    window.addEventListener('hashchange', this.handleHashChange);
+    await this.checkServerAndConnect();
   },
 
   mounted: function () {
@@ -100,10 +111,36 @@ export default {
   },
 
   beforeDestroy: function () {
+    window.removeEventListener('hashchange', this.handleHashChange);
+    if (this.retryTimer) {
+      clearTimeout(this.retryTimer);
+      this.retryTimer = null;
+    }
     stateStream.stop();
   },
 
   methods: {
+    async checkServerAndConnect() {
+      try {
+        await api.get('/health');
+      } catch (e) {
+        this.serverUnavailable = true;
+        this.retryTimer = setTimeout(this.checkServerAndConnect, 5000);
+        return;
+      }
+      this.serverUnavailable = false;
+      if (this.retryTimer) {
+        clearTimeout(this.retryTimer);
+        this.retryTimer = null;
+      }
+      if (this.isAdmin) return;
+      await this.ensureTabSession();
+      this.sessionReady = true;
+      if (sessionStorage.getItem('token') && !this.isFichas) {
+        stateStream.connect();
+      }
+    },
+
     dismissBanner() {
       this.bannerDismissed = true;
       localStorage.setItem('samsungBannerDismissed', 'true');
@@ -128,6 +165,18 @@ export default {
           console.error(e);
         }
       }
+    },
+    handleHashChange: function () {
+      this.isAdmin = window.location.hash.startsWith('#/admin');
+      this.isFichas = window.location.hash.startsWith('#/fichas');
+      if (this.isFichas || this.isAdmin) {
+        stateStream.stop();
+      } else if (sessionStorage.getItem('token')) {
+        stateStream.connect();
+      }
+    },
+    exitFichas: function () {
+      window.location.hash = '';
     },
     handleGotoStep: function (stepId) {
       this.step = this.steps[Object.keys(this.steps).find(key => this.steps[key] === stepId)];

@@ -64,6 +64,10 @@
                     </v-form>
                 </v-card-text>
                 <v-card-actions>
+                    <v-btn v-if="isStudentStep" @click="goToFichas" color="primary" outlined>
+                        <v-icon left>mdi-ticket-confirmation-outline</v-icon>
+                        Comprar fichas
+                    </v-btn>
                     <v-spacer />
                     <v-btn v-if="isStudentStep && fromRestart" @click="exitConfirmationDialog = true" color="accent" outlined>Sair</v-btn>
                     <v-btn v-if="!isStudentStep" @click="startClearAction" color="accent">Limpar</v-btn>
@@ -292,6 +296,9 @@ export default {
         },
     },
     methods: {
+        goToFichas: function () {
+            window.location.hash = '#/fichas';
+        },
         load: async function () {
             await this.loadMesasBase();
             if (this.fromRestart) {
