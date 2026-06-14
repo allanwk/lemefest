@@ -47,6 +47,7 @@ import SamsungDarkBanner from './components/SamsungDarkBanner';
 import Admin from './components/Admin';
 import { isSamsungBrowser } from './utils/isSamsungBrowser';
 import api from './api/axios';
+import stateStream from './api/stateStream';
 
 export default {
   name: 'App',
@@ -93,10 +94,17 @@ export default {
     if (this.isAdmin) return;
     await this.ensureTabSession();
     this.sessionReady = true;
+    if (sessionStorage.getItem('token')) {
+      stateStream.connect();
+    }
   },
 
   mounted: function () {
     this.showSamsungBanner = isSamsungBrowser();
+  },
+
+  beforeDestroy: function () {
+    stateStream.stop();
   },
 
   methods: {

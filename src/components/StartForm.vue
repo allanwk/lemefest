@@ -148,6 +148,7 @@
 <script>
 import { v4 as uuidv4 } from 'uuid';
 import FullscreenLoader from './FullscreenLoader';
+import stateStream from '../api/stateStream';
 
 export default {
     name: 'StartForm',
@@ -305,6 +306,7 @@ export default {
                     const token = response.data.token;
                     sessionStorage.setItem("token", token);
                     localStorage.setItem("bootstrapToken", token);
+                    stateStream.connect();
 
                     if (response.data.uuid_usuario) {
                         localStorage.setItem("uuid_usuario", response.data.uuid_usuario);
@@ -352,6 +354,7 @@ export default {
             } finally {
                 this.loaded = true;
             }
+            await stateStream.refreshNow();
             this.$emit('next');
         },
         back: function () {

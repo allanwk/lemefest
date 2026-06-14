@@ -70,6 +70,7 @@
 import TableMap from './TableMap';
 import CountdownTimer from './CountdownTimer';
 import FullscreenLoader from './FullscreenLoader';
+import stateStream from '../api/stateStream';
 
 export default {
     name: 'ResourceList',
@@ -81,7 +82,7 @@ export default {
     data: function () {
         return {
             loaded: false,
-            interval: null,
+            unsubscribe: null,
             step: 1,
             steps: {
                 REGISTER: 0,
@@ -106,22 +107,17 @@ export default {
             cancelDialog: false,
             cancelLoading: false,
             queuePosition: null,
-            pollingInterval: 60000,
-            pollingIntervals: {
-                EVERY_MINUTE: 60000,
-                EVERY_10_SECONDS: 10000,
-                EVERY_5_SECONDS: 5000,
-            },
-            timeout: null,
         };
     },
     mounted: function () {
-        this.startPolling();
+        this.unsubscribe = stateStream.subscribe(this.applyState);
+        if (stateStream.state.usuario) {
+            this.applyState({ usuario: stateStream.state.usuario, recursos: stateStream.state.recursos });
+        }
     },
     beforeDestroy: function () {
-        this.stopPollingState();
-        if (this.timeout) {
-            window.clearTimeout(this.timeout);
+        if (this.unsubscribe) {
+            this.unsubscribe();
         }
     },
     computed: {
@@ -230,65 +226,33 @@ export default {
         },
     },
     methods: {
-        startPolling: function () {
-            if (!this.interval) {
-                this.getState();
-                this.interval = window.setInterval(this.getState, this.pollingInterval);
-            }
-        },
-        stopPollingState: function () {
-            if (this.interval) {
-                window.clearInterval(this.interval);
-                this.interval = null;
-            }
-        },
-        changePollingRate: function (pollingInterval) {
-            this.pollingInterval = pollingInterval;
-            if (this.interval) {
-                window.clearInterval(this.interval);
-            }
-            this.interval = window.setInterval(this.getState, pollingInterval);
-        },
-        getState: async function () {
-            let response;
-            try {
-                response = await this.$axios.post('/state');
-            } catch (e) {
-                console.error(e);
-                // this.$toasted.error("Não foi possível consultar a fila");
+        applyState: function (data) {
+            if (!data || !data.usuario) {
                 return;
             }
 
-            if ((this.step === this.steps.QUEUE || !this.resources.length) && response.data.recursos) {
-                this.resources = response.data.recursos;
+            if ((this.step === this.steps.QUEUE || !this.resources.length) && data.recursos) {
+                this.resources = data.recursos;
                 this.selected = this.resources.filter(resource => resource.id_status_recurso !== 1).map(resource => resource.id_recurso);
                 this.loaded = true;
             }
 
-            const user = response.data.usuario;
+            const user = data.usuario;
             if (parseInt(user.id_etapa, 10) === 7) {
-                this.stopPollingState();
                 this.$emit('cancelled');
                 return;
             }
             if (parseInt(user.id_etapa, 10) === 3) {
-                this.stopPollingState();
                 this.$emit('next');
                 return;
             }
             if (parseInt(user.segundos_restantes_selecao, 10) < 0) {
-                this.stopPollingState();
                 this.$emit('timeExpired');
                 return;
             }
 
             if (this.step === this.steps.QUEUE && user.posicao != null) {
                 this.queuePosition = parseInt(user.posicao, 10);
-                if (this.queuePosition === 1) {
-                    this.changePollingRate(this.pollingIntervals.EVERY_5_SECONDS);
-                } else if (this.queuePosition <= 2) {
-                    this.changePollingRate(this.pollingIntervals.EVERY_10_SECONDS);
-                }
             }
 
             if (user.minha_vez === 1 && this.step === this.steps.QUEUE && user.limite_mesas != null) {
@@ -316,13 +280,15 @@ export default {
                 }
 
                 this.$nextTick(() => {
-                    this.$refs.timer.startTimer();
+                    if (this.$refs.timer) {
+                        this.$refs.timer.setTime(parseInt(this.remainingSeconds, 10));
+                        this.$refs.timer.startTimer();
+                    }
                 })
             }
         },
         startSelectionStep: function () {
             this.step = this.steps.SELECTION;
-            this.changePollingRate(this.pollingIntervals.EVERY_5_SECONDS);
         },
         requestPickedResources: async function () {
             if (!this.getMySelectedResourceIds.length) {
@@ -346,7 +312,7 @@ export default {
             } finally {
                 this.buttonLoading = false;
             }
-            this.stopPollingState();
+            stateStream.refreshNow();
             this.$emit('next', paymentResponse);
         },
         getResourceState: function (item) {
@@ -369,14 +335,13 @@ export default {
             return 0;
         },
         atTimerEnd: function () {
-            this.stopPollingState();
-            this.timeout = window.setTimeout(this.startPolling, 1000);
+            // O cron processQueue do servidor empurra a expiração via SSE em até ~5s.
+            stateStream.refreshNow();
         },
         cancelSelection: async function () {
             this.cancelLoading = true;
             try {
                 await this.$axios.post('/user/cancel');
-                this.stopPollingState();
                 this.$emit('cancelled');
             } catch (e) {
                 console.error(e);

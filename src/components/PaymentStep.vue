@@ -48,6 +48,7 @@
 <script>
     import CountdownTimer from './CountdownTimer';
     import FullscreenLoader from './FullscreenLoader';
+    import stateStream from '../api/stateStream';
 
     export default {
         name: 'PaymentStep',
@@ -60,23 +61,24 @@
                 qr_code: null,
                 qr_code_base64: null,
                 payment_value: null,
-                interval: null,
+                unsubscribe: null,
                 remainingSeconds: null,
                 shownAlert: false,
                 loaded: false,
                 cancelDialog: false,
                 cancelLoading: false,
-                timeout: null,
             }
         },
         mounted: function () {
             this.loadPayment();
-            this.startPolling();
+            this.unsubscribe = stateStream.subscribe(this.applyState);
+            if (stateStream.state.usuario) {
+                this.applyState({ usuario: stateStream.state.usuario });
+            }
         },
         beforeDestroy: function () {
-            this.stopPolling();
-            if (this.timeout) {
-                window.clearTimeout(this.timeout);
+            if (this.unsubscribe) {
+                this.unsubscribe();
             }
         },
         methods: {
@@ -94,40 +96,20 @@
                     this.$toasted.error("Erro ao carregar pagamento. Por favor recarregue a página em instantes");
                 }
             },
-            startPolling: function () {
-                if (!this.interval) {
-                    this.getState();
-                    this.interval = window.setInterval(this.getState, 5000);
-                }
-            },
-            stopPolling: function () {
-                if (this.interval) {
-                    window.clearInterval(this.interval);
-                    this.interval = null;
-                }
-            },
-            getState: async function () {
-                let response;
-                try {
-                    response = await this.$axios.post('/state');
-                } catch (e) {
-                    console.error(e);
-                    // this.$toasted.error("Não foi possível consultar a fila");
+            applyState: function (data) {
+                if (!data || !data.usuario) {
                     return;
                 }
-                const user = response.data.usuario;
+                const user = data.usuario;
                 if (parseInt(user.id_etapa, 10) === 7) {
-                    this.stopPolling();
                     this.$emit('cancelled');
                     return;
                 }
                 if (parseInt(user.id_etapa, 10) === 4) {
-                    this.stopPolling();
                     this.$emit('next');
                     return;
                 }
                 if (parseInt(user.segundos_restantes_pagamento, 10) < 0) {
-                    this.stopPolling();
                     this.$emit('timeExpired');
                     return;
                 }
@@ -143,6 +125,7 @@
 
                 this.$nextTick(() => {
                     if (this.$refs.timer) {
+                        this.$refs.timer.setTime(parseInt(this.remainingSeconds, 10));
                         this.$refs.timer.startTimer();
                     } else {
                         window.setTimeout(this.startTimer, 1000);
@@ -166,14 +149,13 @@
                 }
             },
             atTimerEnd: function () {
-                this.stopPolling();
-                this.timeout = window.setTimeout(this.startPolling, 1000);
+                // O cron verifyPayments/processQueue do servidor empurra a expiração ou aprovação via SSE.
+                stateStream.refreshNow();
             },
             cancelSelection: async function () {
                 this.cancelLoading = true;
                 try {
                     await this.$axios.post('/user/cancel');
-                    this.stopPolling();
                     this.$emit('cancelled');
                 } catch (e) {
                     console.error(e);
