@@ -9,20 +9,47 @@
                 <v-card-text>
                     <v-form ref='form' lazy-validation @submit.prevent="handleSubmit">
                         <template v-if="isStudentStep">
-                            <p v-if="mesasBase > 0">Você poderá comprar até {{ mesasBase }} mesas, e mais 2 mesas para cada aluno identificado.</p>
-                            <p v-else>Para cada aluno identificado, você poderá comprar até 2 mesas</p>
-                            <v-row align="center" justify="center">
+                            <p v-if="mesasBase > 0">Você poderá comprar até {{ mesasBase }} {{ mesasBase === 1 ? 'mesa' : 'mesas' }}, e mais 2 mesas para cada aluno identificado.</p>
+                            <p v-else>Para cada aluno identificado, você poderá comprar até 2 mesas, sendo uma delas uma mesa de pista</p>
+                            <v-row align="center" justify="center" no-gutters>
                                 <v-col>
                                     <v-text-field label="RM do aluno" required
                                     :rules="validationEnabled ? [rules.required] : []" v-model="studentCode"
-                                    clearable v-mask="'###########'" inputmode="numeric" pattern="[0-9]*"></v-text-field>
+                                    clearable v-mask="'###########'" inputmode="numeric" pattern="[0-9]*"
+                                    @keypress.enter.prevent="checkStudent"></v-text-field>
                                 </v-col>
-                                <v-col cols="5">
+                                <v-col cols="auto" class="pl-2">
                                     <v-btn color="primary" outlined @click='checkStudent' :loading="loadingAddStudent">Adicionar</v-btn>
                                 </v-col>
                             </v-row>
-                            <v-divider></v-divider>
-                            <p class="mt-4">{{ informedStudentsText }}</p>
+
+                            <p v-if="!students.length" class="text-center text--secondary mt-2 mb-0">
+                                {{ informedStudentsText }}
+                            </p>
+                            <v-list v-else dense class="py-0">
+                                <v-subheader class="px-0">Alunos identificados</v-subheader>
+                                <template v-for="(student, index) in students">
+                                    <v-list-item :key="student.studentId" class="px-0">
+                                        <v-list-item-avatar size="36" color="secondary">
+                                            <span class="black--text">{{ initials(student.name) }}</span>
+                                        </v-list-item-avatar>
+                                        <v-list-item-content>
+                                            <v-list-item-title>{{ student.name }}</v-list-item-title>
+                                        </v-list-item-content>
+                                        <v-list-item-action>
+                                            <v-btn icon color="accent" :loading="removingStudentId === student.studentId"
+                                                @click="startRemoveStudent(student)" aria-label="Remover aluno">
+                                                <v-icon>mdi-delete-outline</v-icon>
+                                            </v-btn>
+                                        </v-list-item-action>
+                                    </v-list-item>
+                                    <v-divider v-if="index < students.length - 1" :key="`d-${student.studentId}`"></v-divider>
+                                </template>
+                            </v-list>
+
+                            <v-alert v-if="secondsUntilRelease > 0" dense text type="info" class="mt-4 mb-0">
+                                A fila para compra abre em <b>{{ formattedCountdown }}</b>, mas você já pode deixar os alunos cadastrados.
+                            </v-alert>
                         </template>
                         <template v-else>
                             <p>Por favor preencha corretamente. Precisamos desses dados para processar o pagamento via PIX.</p>
@@ -39,9 +66,11 @@
                 <v-card-actions>
                     <v-spacer />
                     <v-btn v-if="isStudentStep && fromRestart" @click="exitConfirmationDialog = true" color="accent" outlined>Sair</v-btn>
-                    <v-btn @click="startClearAction" color="accent">Limpar</v-btn>
+                    <v-btn v-if="!isStudentStep" @click="startClearAction" color="accent">Limpar</v-btn>
                     <v-btn v-if="!isStudentStep" @click="handleAction" color="primary">Salvar</v-btn>
-                    <v-btn v-else :disabled="isStudentStep && !students.length && mesasBase === 0" @click="handleAction" :loading="handleNextLoading" color="primary">Entrar na fila</v-btn>
+                    <v-btn v-else :disabled="enterQueueDisabled" @click="handleAction" :loading="handleNextLoading" color="primary">
+                        {{ secondsUntilRelease > 0 ? 'Aguardando abertura' : 'Entrar na fila' }}
+                    </v-btn>
                 </v-card-actions>
             </v-card>
         </div>
@@ -122,13 +151,25 @@
             <v-card>
                 <v-card-title>Confirmação</v-card-title>
                 <v-card-text>
-                    <p v-if="isStudentStep">Remover alunos selecionados?</p>
-                    <p v-else>Limpar campos preenchidos?</p>
+                    <p>Limpar campos preenchidos?</p>
                 </v-card-text>
                 <v-card-actions>
                     <v-spacer/>
                     <v-btn outlined color="accent" @click="clearConfirmationDialog = false">Voltar</v-btn>
                     <v-btn color="primary" @click="clear">Sim</v-btn>
+                </v-card-actions>
+            </v-card>
+        </v-dialog>
+        <v-dialog v-model="removeConfirmationDialog" max-width="400">
+            <v-card>
+                <v-card-title>Remover aluno</v-card-title>
+                <v-card-text>
+                    <p>Deseja remover o aluno "{{ studentToRemove && studentToRemove.name }}"?</p>
+                </v-card-text>
+                <v-card-actions>
+                    <v-spacer/>
+                    <v-btn outlined color="accent" @click="removeConfirmationDialog = false">Voltar</v-btn>
+                    <v-btn color="primary" @click="removeStudent">Remover</v-btn>
                 </v-card-actions>
             </v-card>
         </v-dialog>
@@ -179,11 +220,17 @@ export default {
             dialog: false,
             confirmationDialog: false,
             clearConfirmationDialog: false,
+            removeConfirmationDialog: false,
             exitConfirmationDialog: false,
             dataConfirmationDialog: false,
             exchangeOnlyDialog: false,
             loadingAddStudent: false,
             handleNextLoading: false,
+            removingStudentId: null,
+            studentToRemove: null,
+            secondsUntilRelease: 0,
+            releaseInterval: null,
+            releaseTargetAt: null,
             errorDialog: false,
             errorDialogMessage: null,
             rules: {
@@ -193,7 +240,12 @@ export default {
         }
     },
     mounted: function () {
+        document.addEventListener('visibilitychange', this.onVisibilityChange);
         this.load();
+    },
+    beforeDestroy: function () {
+        document.removeEventListener('visibilitychange', this.onVisibilityChange);
+        this.clearReleaseInterval();
     },
     computed: {
         cardTitle: function () {
@@ -202,10 +254,28 @@ export default {
             }
             return 'Dados para pagamento'
         },
+        enterQueueDisabled: function () {
+            if (this.secondsUntilRelease > 0) {
+                return true;
+            }
+            return !this.students.length && this.mesasBase === 0;
+        },
+        formattedCountdown: function () {
+            const total = Math.max(0, this.secondsUntilRelease);
+            const days = Math.floor(total / 86400);
+            const hours = Math.floor((total % 86400) / 3600);
+            const minutes = Math.floor((total % 3600) / 60);
+            const seconds = total % 60;
+            if (days > 0) {
+                return `${days}d ${hours}h ${minutes}min`;
+            }
+            const pad = (n) => n.toString().padStart(2, '0');
+            return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
+        },
         informedStudentsText: function () {
             if (!this.students.length) {
                 if (this.mesasBase > 0) {
-                    return "Você ainda não informou alunos. Você poderá comprar até " + this.mesasBase + " mesas.";
+                    return "Você ainda não informou alunos. Você poderá comprar até " + this.mesasBase + (this.mesasBase === 1 ? " mesa." : " mesas.");
                 }
                 return "Identifique ao menos um aluno para continuar.";
             }
@@ -256,6 +326,11 @@ export default {
                     this.$emit('gotoStep', response.data?.user?.id_etapa);
                     return;
                 } else if (response?.data?.user) {
+                    try {
+                        await this.loadLinkedStudents();
+                    } catch (e) {
+                        console.error(e);
+                    }
                     this.isStudentStep = true;
                     this.loaded = true;
                     return;
@@ -341,9 +416,7 @@ export default {
         enterQueue: async function () {
             this.loaded = false;
             try {
-                await this.$axios.post('/user/enter-queue', {
-                    codigos_alunos: this.students.map(student => student.studentCode),
-                });
+                await this.$axios.post('/user/enter-queue', {});
             } catch (e) {
                 if (e.response?.data?.message != null) {
                     this.$toasted.error(e.response.data.message);
@@ -361,18 +434,12 @@ export default {
             this.isStudentStep = false;
         },
         clear: function () {
-            if (this.isStudentStep) {
-                this.students = [];
-                this.studentCode = null;
-                this.clearConfirmationDialog = false;
-            } else {
-                this.identification = null;
-                this.email = null;
-                this.name = null;
-                this.$refs.form.resetValidation();
-                this.validationEnabled = false;
-                this.clearConfirmationDialog = false;
-            }
+            this.identification = null;
+            this.email = null;
+            this.name = null;
+            this.$refs.form.resetValidation();
+            this.validationEnabled = false;
+            this.clearConfirmationDialog = false;
         },
         isValidCPF: function (value) {
             if (value == null) {
@@ -439,22 +506,110 @@ export default {
                 this.foundStudentCode = null;
             })
         },
-        confirmStudent: function () {
-            this.students.push({ name: this.foundStudentName, studentId: this.foundStudentId, studentCode: this.foundStudentCode });
+        confirmStudent: async function () {
+            this.loadingAddStudent = true;
+            try {
+                const response = await this.$axios.post('/student/link', { codigo_aluno: this.foundStudentCode });
+                const aluno = response.data.aluno;
+                this.students.push({ name: aluno.nome, studentId: aluno.id_aluno, studentCode: aluno.codigo });
+                this.$toasted.success("Aluno adicionado!");
+            } catch (e) {
+                this.$toasted.error(e.response?.data?.message ?? "Não foi possível adicionar o aluno.");
+                this.closeStudentDialog();
+                return;
+            } finally {
+                this.loadingAddStudent = false;
+            }
             this.$nextTick(() => {
                 this.foundStudentId = null;
                 this.studentCode = null;
                 this.validationEnabled = false;
                 this.closeStudentDialog();
-                this.$toasted.success("Aluno adicionado!");
             })
+        },
+        initials: function (name) {
+            if (!name) {
+                return '';
+            }
+            const parts = name.trim().split(/\s+/);
+            const first = parts[0]?.charAt(0) ?? '';
+            const last = parts.length > 1 ? parts[parts.length - 1].charAt(0) : '';
+            return (first + last).toUpperCase();
+        },
+        startRemoveStudent: function (student) {
+            this.studentToRemove = student;
+            this.removeConfirmationDialog = true;
+        },
+        removeStudent: async function () {
+            const student = this.studentToRemove;
+            this.removeConfirmationDialog = false;
+            if (!student) {
+                return;
+            }
+            this.removingStudentId = student.studentId;
+            try {
+                await this.$axios.post('/student/unlink', { id_aluno: student.studentId });
+                this.students = this.students.filter(s => s.studentId !== student.studentId);
+                this.$toasted.success("Aluno removido.");
+            } catch (e) {
+                this.$toasted.error(e.response?.data?.message ?? "Não foi possível remover o aluno.");
+            } finally {
+                this.removingStudentId = null;
+                this.studentToRemove = null;
+            }
         },
         loadMesasBase: async function () {
             try {
                 const response = await this.$axios.post('/state/getStarted');
                 this.mesasBase = parseInt(response.data?.quantidade_mesas_base ?? 0, 10);
+                const seconds = response.data?.segundos_ate_liberacao;
+                this.startReleaseCountdown(seconds == null ? 0 : parseInt(seconds, 10));
             } catch (e) {
                 this.mesasBase = 0;
+                this.startReleaseCountdown(0);
+            }
+        },
+        startReleaseCountdown: function (seconds) {
+            this.clearReleaseInterval();
+            const safeSeconds = Math.max(0, seconds);
+            this.secondsUntilRelease = safeSeconds;
+            if (safeSeconds <= 0) {
+                this.releaseTargetAt = null;
+                return;
+            }
+            this.releaseTargetAt = Date.now() + safeSeconds * 1000;
+            this.releaseInterval = setInterval(this.tickReleaseCountdown, 1000);
+        },
+        tickReleaseCountdown: function () {
+            if (this.releaseTargetAt == null) {
+                this.clearReleaseInterval();
+                return;
+            }
+            this.secondsUntilRelease = Math.max(0, Math.ceil((this.releaseTargetAt - Date.now()) / 1000));
+            if (this.secondsUntilRelease <= 0) {
+                this.releaseTargetAt = null;
+                this.clearReleaseInterval();
+            }
+        },
+        clearReleaseInterval: function () {
+            if (this.releaseInterval) {
+                clearInterval(this.releaseInterval);
+                this.releaseInterval = null;
+            }
+        },
+        onVisibilityChange: async function () {
+            if (document.visibilityState !== 'visible' || !this.isStudentStep) {
+                return;
+            }
+            if (this.releaseTargetAt != null) {
+                this.tickReleaseCountdown();
+            }
+            try {
+                const response = await this.$axios.post('/state/getStarted');
+                const seconds = response.data?.segundos_ate_liberacao;
+                this.startReleaseCountdown(seconds == null ? 0 : parseInt(seconds, 10));
+            } catch (e) {
+                console.error(e);
             }
         },
         loadLinkedStudents: async function () {
@@ -464,9 +619,6 @@ export default {
             }
         },
         startClearAction: function () {
-            if (this.fromRestart) {
-                return this.$toasted.error("Como você já comprou alguma mesa, não é possível remover os alunos identificados. Caso tenha adicionado um aluno incorretamente, por favor recarregue a página.")
-            }
             this.clearConfirmationDialog = true;
         },
         checkIfCanBuyMoreResources: async function () {

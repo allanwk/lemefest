@@ -23,7 +23,6 @@
     <v-main class="background">
       <Admin v-if="isAdmin"/>
       <template v-else-if="sessionReady">
-        <StartWaiting v-if="step === steps.START_WAITING" @next="step = steps.REGISTER"/>
         <StartForm v-if='step === steps.REGISTER' @gotoStep='handleGotoStep' @next="step = steps.QUEUE" :fromRestart="restart"/>
         <ResourceList v-if='[steps.QUEUE, steps.SELECTION].includes(step)' @next="step = steps.PAYMENT" @timeExpired="step = steps.SELECTION_EXPIRED" @cancelled="step = steps.CANCELLED"/>
         <PaymentStep v-if='step === steps.PAYMENT' @next="step = steps.PAID" @timeExpired="step = steps.PAYMENT_EXPIRED" @cancelled="step = steps.CANCELLED"/>
@@ -36,7 +35,6 @@
 </template>
 
 <script>
-import StartWaiting from './components/StartWaiting';
 import StartForm from './components/StartForm';
 import ResourceList from './components/ResourceList';
 import PaymentStep from './components/PaymentStep';
@@ -53,7 +51,6 @@ export default {
   name: 'App',
 
   components: {
-    StartWaiting,
     StartForm,
     ResourceList,
     PaymentStep,
@@ -66,7 +63,6 @@ export default {
 
   data: () => ({
     steps: {
-      START_WAITING: -1,
       REGISTER: 0,
       QUEUE: 1,
       SELECTION: 2,
@@ -76,7 +72,7 @@ export default {
       PAYMENT_EXPIRED: 6,
       CANCELLED: 7,
     },
-    step: -1,
+    step: 0,
     restart: false,
     showSamsungBanner: false,
     bannerDismissed: localStorage.getItem('samsungBannerDismissed') === 'true',
